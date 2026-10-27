@@ -1,0 +1,19 @@
+{
+    "name": "igi-android",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Pembungkus Android untuk situs IGI (Info Gempa Indonesia). Memuat situs dari server; tidak berisi data.",
+    "scripts": {
+        "web": "node scripts/build-www.mjs",
+        "sync": "npm run web && cap sync android",
+        "apk": "node scripts/build-apk.mjs",
+        "apk:release": "node scripts/build-release.mjs"
+    },
+    "dependencies": {
+        "@capacitor/android": "^6.2.2",
+        "@capacitor/core": "^6.2.2"
+    },
+    "devDependencies": {
+        "@capacitor/cli": "^6.2.2"
+    }
+}

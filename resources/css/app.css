@@ -1,0 +1,394 @@
+@import '@fontsource-variable/plus-jakarta-sans';
+@import 'tailwindcss';
+
+@source '../../storage/framework/views/*.php';
+@source '../js/**/*.vue';
+
+@theme {
+    /* Plus Jakarta Sans: ramah, bulat, dan mudah dibaca semua usia; satu keluarga untuk judul dan teks. */
+    --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
+
+    --color-ink: #0f1b3d;
+    --color-muted: #566285;
+    --color-line: #dde5f3;
+    --color-mist: #f2f6fd;
+    --color-surface: #ffffff;
+
+    /* Biru merek yang hidup, dengan kuning matahari dan koral sebagai penyemangat. */
+    --color-brand: #1f56e8;
+    --color-brand-soft: #e6eeff;
+    --color-sun: #ffb23e;
+    --color-coral: #ff6a4d;
+
+    /* Bagian gelap: biru laut dalam, dengan garis jejak seismograf bersinar sian. */
+    --color-trench: #0a1630;
+    --color-deep: #14307f;
+    --color-trace: #6fe0ee;
+
+    /* Skala kekuatan gempa, dari kecil ke besar. */
+    --color-quake-1: #e9b949;
+    --color-quake-2: #f08a24;
+    --color-quake-3: #e5412d;
+    --color-quake-4: #a3123a;
+
+    --color-tsunami: #0b6e99;
+    --color-camp: #0f766e;
+
+    /* Arah visual tenang (peta kerja): sudut kecil dan bayangan tipis. */
+    --radius-sm: 3px;
+    --radius-md: 4px;
+    --radius-lg: 5px;
+    --radius-xl: 6px;
+    --radius-2xl: 6px;
+    --radius-3xl: 6px;
+    --radius-4xl: 8px;
+    --shadow-sm: 0 1px 2px rgb(23 51 76 / 0.08);
+    --shadow-md: 0 1px 4px rgb(23 51 76 / 0.1);
+    --shadow-lg: 0 2px 8px rgb(23 51 76 / 0.12);
+    --shadow-xl: 0 4px 14px rgb(23 51 76 / 0.14);
+}
+
+/* Ukuran teks dasar sedikit lebih besar dari bawaan; pengguna bisa memilih "Besar" di kepala halaman. */
+html {
+    font-size: 106.25%;
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+html[data-text='besar'] {
+    font-size: 122%;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    background: var(--color-mist);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+    outline: 2px solid var(--color-tsunami);
+    outline-offset: 2px;
+}
+
+/* Di latar gelap, biru tsunami hanya berkontras sekitar 3:1; garis sian terlihat jelas. */
+.bg-trench :focus-visible,
+.bg-deep :focus-visible,
+.bg-ink :focus-visible,
+.bg-trench\/95 :focus-visible {
+    outline-color: var(--color-trace);
+}
+
+/*
+ * Target ketuk minimal 44 px di layar sentuh dan layar sempit (R-03). Hanya kontrol: tombol, menu, tautan bergaya
+ * tombol, dan isian. Tautan di dalam kalimat dikecualikan (WCAG 2.5.8 mengecualikannya) agar paragraf tidak renggang.
+ */
+@media (max-width: 767px), (pointer: coarse) {
+    button:not(.leaflet-control *),
+    nav a:not(.leaflet-control *),
+    a.rounded-md,
+    a[class*='rounded-md'],
+    a[class*='underline']:not(p a):not(li a),
+    header > div > a,
+    select,
+    input:not([type='radio']):not([type='checkbox']):not([tabindex='-1']),
+    textarea {
+        min-height: 44px;
+        /* Teks di tengah kotak yang membesar, tanpa mengubah display yang sudah ditetapkan kelas Tailwind. */
+        align-content: center;
+    }
+}
+
+/* Angka magnitudo: lebar tetap supaya kolom daftar rapi. */
+.mag {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.04em;
+    line-height: 1;
+}
+
+/* Judul: font kondensed tampak kecil pada ukuran yang sama dengan font teks, jadi diberi sedikit tambahan. */
+.font-display {
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+}
+
+/* Garis seismogram digambar satu kali saat halaman dibuka; itu satu-satunya gerak yang berjalan sendiri di beranda. */
+.trace-draw {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: trace-draw 2.6s cubic-bezier(0.3, 0.1, 0.2, 1) 0.2s forwards;
+}
+
+@keyframes trace-draw {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+/* Titik "sekarang" di ujung kanan seismogram. */
+.live-dot {
+    animation: live-dot 1.8s ease-out infinite;
+}
+
+@keyframes live-dot {
+    0% {
+        r: 4;
+        opacity: 0.9;
+    }
+    100% {
+        r: 16;
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .trace-draw {
+        animation: none;
+        stroke-dashoffset: 0;
+    }
+
+    .live-dot,
+    .wave-ring,
+    .shake {
+        animation: none !important;
+    }
+}
+
+/* Penanda posko di peta */
+.camp-pin {
+    display: block;
+    width: 12px;
+    height: 12px;
+    background: var(--color-camp);
+    border: 2px solid #fff;
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px rgb(20 32 43 / 35%);
+}
+
+/* Gempa baru dari siaran langsung: cincin yang berdenyut sekali lalu hilang. */
+.pulse {
+    position: relative;
+    display: block;
+    width: 0;
+    height: 0;
+}
+
+.pulse::before,
+.pulse::after {
+    content: '';
+    position: absolute;
+    left: -60px;
+    top: -60px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 3px solid var(--c, var(--color-quake-3));
+    opacity: 0;
+    animation: pulse-ring 2.4s ease-out 3;
+}
+
+.pulse::after {
+    animation-delay: 0.8s;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.15);
+        opacity: 0.9;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0;
+    }
+}
+
+.leaflet-tooltip.quake-tip {
+    background: var(--color-ink);
+    border: 0;
+    color: #fff;
+    border-radius: 6px;
+    padding: 5px 9px;
+    font: 500 12px/1.3 var(--font-sans);
+    box-shadow: none;
+}
+
+.leaflet-tooltip.quake-tip::before {
+    display: none;
+}
+
+.leaflet-container {
+    font-family: var(--font-sans);
+    background: #dfe5ea;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pulse::before,
+    .pulse::after {
+        animation: none;
+        opacity: 0.5;
+        transform: scale(0.5);
+    }
+
+    * {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+
+/* ===== Gerak dan animasi bersama ===== */
+
+/* Muncul halus saat digulir ke layar. Kelas "in" ditambahkan oleh direktif v-reveal (resources/js/lib/reveal.js). */
+.reveal {
+    opacity: 0;
+    transform: translateY(22px) scale(0.985);
+    transition:
+        opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+        transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: var(--d, 0ms);
+}
+
+.reveal.in {
+    opacity: 1;
+    transform: none;
+}
+
+/* Kartu yang bisa disentuh: terangkat saat disorot, menekan saat diketuk. */
+.lift {
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.lift:active {
+    transform: translateY(-1px) scale(0.99);
+}
+
+/* Melayang pelan, untuk elemen hias di hero. */
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.float {
+    animation: float 5s ease-in-out infinite;
+}
+
+/* Riak dari pusat gempa. */
+@keyframes ripple {
+    0% {
+        transform: scale(0.2);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0;
+    }
+}
+
+.ripple {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: ripple 3.6s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}
+
+/* Gelombang bergeser tanpa henti. */
+@keyframes wave-slide {
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+.wave-slide {
+    animation: wave-slide var(--t, 18s) linear infinite;
+}
+
+/* Kilap tipis yang lewat di atas tombol utama. */
+@keyframes sheen {
+    0% {
+        transform: translateX(-120%) skewX(-18deg);
+    }
+    60%,
+    100% {
+        transform: translateX(260%) skewX(-18deg);
+    }
+}
+
+.sheen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent);
+    animation: sheen 4.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+/* Tanda "siaran langsung" berdenyut. */
+@keyframes live-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgb(34 197 94 / 0.55);
+    }
+    100% {
+        box-shadow: 0 0 0 12px rgb(34 197 94 / 0);
+    }
+}
+
+.live-pulse {
+    animation: live-pulse 1.8s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    .float,
+    .ripple,
+    .wave-slide,
+    .sheen::after,
+    .live-pulse {
+        animation: none !important;
+    }
+
+    .lift,
+    .lift:hover,
+    .lift:active {
+        transition: none;
+        transform: none;
+    }
+}
+
+/* Halaman publik non-peta: tombol dan tautan bentuk pil menjadi sudut kecil; gradasi dekoratif menjadi warna polos; tanpa efek kilau/skala. */
+.public-shell :is(a, button).rounded-full,
+.public-shell [class*='rounded-3xl'],
+.public-shell [class*='rounded-[2rem]'] { border-radius: 6px; }
+.public-shell .bg-gradient-to-br,
+main .bg-gradient-to-br { background-image: none; background-color: #17334c; }
+.sheen::after, .sheen::before { display: none; }
+.public-shell *:hover, main *:hover { scale: none; }

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">IGI</string>
+    <string name="title_activity_main">IGI</string>
+    <string name="package_name">id.igi.gempa</string>
+    <string name="custom_url_scheme">id.igi.gempa</string>
+</resources>
