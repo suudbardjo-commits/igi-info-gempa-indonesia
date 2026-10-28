@@ -8,7 +8,7 @@ const sheet = useBottomSheet({ enabled: toRef(props, 'enabled') });
 const full = computed(() => sheet.snaps.value[2]);
 const label = computed(() => ['Perbesar panel', 'Perbesar penuh', 'Kecilkan panel'][sheet.index.value]);
 
-defineExpose({ height: sheet.height, index: sheet.index, snapTo: sheet.snapTo });
+defineExpose({ height: sheet.height, index: sheet.index, dragging: sheet.dragging, snapTo: sheet.snapTo });
 </script>
 
 <template>
@@ -33,12 +33,12 @@ defineExpose({ height: sheet.height, index: sheet.index, snapTo: sheet.snapTo })
 </template>
 
 <style scoped>
-.sheet { position: fixed; z-index: 1100; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; background: #090d16; border-top: 1px solid #374151; border-radius: 4px 4px 0 0; transform: translate3d(0, calc(100% - var(--sheet-height, 220px)), 0); will-change: transform; padding-bottom: env(safe-area-inset-bottom); }
+.sheet { position: fixed; z-index: 1100; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; background: var(--sheet-bg, #090d16); border-top: 1px solid var(--sheet-edge, #374151); border-radius: var(--sheet-radius, 4px) var(--sheet-radius, 4px) 0 0; transform: translate3d(0, calc(100% - var(--sheet-height, 220px)), 0); will-change: transform; padding-bottom: env(safe-area-inset-bottom); }
 .handle { flex: none; display: flex; align-items: center; justify-content: center; width: 100%; height: 28px; background: transparent; border: 0; cursor: grab; touch-action: none; }
 .handle:active { cursor: grabbing; }
 .handle:focus-visible { outline: 2px solid #38bdf8; outline-offset: -2px; }
-.grip { width: 40px; height: 4px; background: #4b5563; border-radius: 1px; }
-.body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 12px 24px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-content: start; }
+.grip { width: 40px; height: 4px; background: var(--sheet-grip, #4b5563); border-radius: 2px; }
+.body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: var(--sheet-pad, 0 12px 24px); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sheet-gap, 10px); align-content: start; }
 /* Titik Peek: isi dipotong (tidak digulir) supaya gestur seret tidak berebut dengan gulir. */
 .body.locked { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .sheet { will-change: auto; } }

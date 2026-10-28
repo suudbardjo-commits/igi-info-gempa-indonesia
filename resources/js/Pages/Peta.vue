@@ -1,9 +1,9 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
-import AtlasWorkspace from '../components/AtlasWorkspace.vue';
+import Beranda from './Beranda.vue';
+
+// /peta memakai tampilan yang sama dengan beranda; data awal berbentuk FeatureCollection.
 defineProps({ events: Object, camps: Object });
 </script>
 <template>
-    <Head title="Peta pantauan Indonesia" />
-    <AtlasWorkspace :events="events" :camps="camps" />
+    <Beranda :week="events?.features ?? []" :camps="camps?.features ?? []" />
 </template>

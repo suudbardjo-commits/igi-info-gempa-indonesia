@@ -2,7 +2,7 @@
 import '@fontsource-variable/figtree';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import BrandMark from '../components/BrandMark.vue';
+import PortalHeader from '../home/PortalHeader.vue';
 import Icon from '../components/Icon.vue';
 import WeatherMap from '../components/WeatherMap.vue';
 import { MAX_COMPARE, MAX_FAVORITES, distanceKm, formatLocalDay, formatLocalTime, locationKey, useWeather } from '../composables/useWeather';
@@ -273,12 +273,7 @@ const compareMixed = computed(() => new Set(compareData.value.map((c) => c.state
     <Head title="Cuaca wilayah" />
     <div class="wx">
         <a class="skip" href="#wx-main">Lewati ke isi cuaca</a>
-        <header class="wx-header">
-            <Link href="/" class="identity" aria-label="IGI, Info Gempa Indonesia"><BrandMark :size="34" /><span><b>IGI</b><small>Info Gempa Indonesia</small></span></Link>
-            <nav aria-label="Navigasi utama"><Link href="/">Pantauan</Link><Link href="/cuaca" aria-current="page">Cuaca</Link><Link href="/komando">Komando</Link><Link href="/berita">Berita</Link><Link href="/panduan">Panduan</Link><Link href="/tentang">Tentang</Link></nav>
-            <button class="icon-btn" type="button" :aria-pressed="big" aria-label="Perbesar ukuran teks" @click="toggle"><Icon name="text" :size="18" /></button>
-            <Link :href="workHref" class="account"><Icon name="user" :size="16" /><span>{{ page.props.auth?.user ? 'Ruang kerja' : 'Petugas' }}</span></Link>
-        </header>
+        <PortalHeader active="cuaca" />
 
         <div class="wx-body">
             <aside class="wx-side" aria-label="Pilih lokasi">
