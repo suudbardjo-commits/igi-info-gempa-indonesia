@@ -183,15 +183,16 @@ onMounted(() => {
     // Peta dasar gelap. CartoDB Dark Matter kini mengembalikan ubin "API KEY REQUIRED" tanpa kunci (HTTP 200, jadi tidak
     // terdeteksi sebagai galat), maka dipakai Esri World Dark Gray Canvas (gratis, tanpa kunci) + lapisan label. Gagal
     // memuat ubin tidak mematikan data: pemberitahuan ditampilkan induknya.
-    const esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas';
-    L.tileLayer(`${esri}/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}`, {
-        maxZoom: 16,
-        attribution: 'Peta: Esri, HERE, Garmin, &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
-    })
-        .on('tileerror', () => emit('tiles-error'))
-        .on('load', () => emit('tiles-ok'))
-        .addTo(m);
-    L.tileLayer(`${esri}/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}`, { maxZoom: 16, opacity: 0.8, pane: 'shadowPane' }).addTo(m);
+    const esri = 'https://server.arcgisonline.com/ArcGIS/rest/services';
+    const credit = 'Peta: Esri, HERE, Garmin, &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
+    const tile = (path, opts = {}) => L.tileLayer(`${esri}/${path}/MapServer/tile/{z}/{y}/{x}`, { maxZoom: 19, attribution: credit, ...opts });
+    const onTiles = (layer) => layer.on('tileerror', () => emit('tiles-error')).on('load', () => emit('tiles-ok'));
+
+    // Tiga peta dasar yang bisa dipilih lewat kontrol layer: Gelap (bawaan, gaya instrumen), Jalan (rinci ala Google Maps), Satelit.
+    const dark = L.layerGroup([onTiles(tile('Canvas/World_Dark_Gray_Base', { maxZoom: 16 })), tile('Canvas/World_Dark_Gray_Reference', { maxZoom: 16, opacity: 0.8, pane: 'shadowPane', attribution: '' })]);
+    const street = L.layerGroup([onTiles(tile('World_Street_Map'))]);
+    const satellite = L.layerGroup([onTiles(tile('World_Imagery', { attribution: 'Citra: Esri, Maxar, Earthstar Geographics' })), tile('Reference/World_Boundaries_and_Places', { attribution: '', pane: 'shadowPane' })]);
+    dark.addTo(m);
 
     faultLayer = L.layerGroup();
     recentLayer.addTo(m);
@@ -199,7 +200,7 @@ onMounted(() => {
     userLayer.addTo(m);
 
     // Kontrol layer (toggle): sesar aktif, gelombang P/S, gempa terkini.
-    L.control.layers(null, { 'Sesar aktif': faultLayer, 'Gelombang P / S': waveLayer, 'Gempa terkini': recentLayer }, { position: 'topright', collapsed: window.innerWidth < 768 }).addTo(m);
+    L.control.layers({ Gelap: dark, Jalan: street, Satelit: satellite }, { 'Sesar aktif': faultLayer, 'Gelombang P / S': waveLayer, 'Gempa terkini': recentLayer }, { position: 'topright', collapsed: window.innerWidth < 768 }).addTo(m);
     m.on('overlayadd', (e) => { if (e.layer === faultLayer) loadFaults(); });
     faultLayer.addTo(m);
     loadFaults();
