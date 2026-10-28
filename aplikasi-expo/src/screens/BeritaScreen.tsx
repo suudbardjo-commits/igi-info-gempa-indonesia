@@ -59,7 +59,7 @@ export default function BeritaScreen() {
                     <View style={st.srcBox}>
                         <Text style={st.h}>Status sumber data</Text>
                         {src.map((x) => (
-                            <View key={x.key} style={st.srcRow}><Text style={[st.text, { flex: 1 }]}>{x.name}</Text><Text style={[st.badge, x.status === 'failed' && { color: COLORS.danger }, x.status === 'late' && { color: '#FF9F43' }]}>{STAT[x.status]}</Text></View>
+                            <View key={x.key} style={st.srcRow}><Text style={[st.text, { flex: 1 }]}>{x.name}</Text><Text style={[st.badge, x.status === 'failed' && { color: COLORS.danger }, x.status === 'late' && { color: '#E65100' }]}>{STAT[x.status]}</Text></View>
                         ))}
                     </View>
                 }

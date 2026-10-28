@@ -36,33 +36,37 @@ export async function saveServerUrl(raw: string): Promise<{ ok: boolean; message
     return { ok: true };
 }
 
-// Palet mode gelap pemantau gempa (lihat DESIGN.md): biru-hitam, permukaan biru laut, satu aksen teal.
+// Palet terang bergaya aplikasi bencana BMKG (lihat DESIGN.md): latar putih keabuan, biru BMKG sebagai satu warna utama,
+// oranye untuk perhatian, merah untuk bahaya.
 export const COLORS = {
-    bg: '#0B1622',
-    surface: '#12263A',
-    raised: '#183049',
-    edge: '#24405C',
-    ink: '#E6EEF5',
-    muted: '#8FA6BA',
-    accent: '#2FD1C3',
-    accentSoft: '#12384A',
-    danger: '#FF6B4A',
+    bg: '#F2F5F9',
+    surface: '#FFFFFF',
+    raised: '#E8EEF5',
+    edge: '#D5DEE8',
+    ink: '#1B2733',
+    muted: '#566677',
+    accent: '#0B67B2',
+    accentSoft: '#E1EFFB',
+    header: '#0B5CA5',
+    danger: '#C62828',
+    orange: '#E65100',
     // Nama lama dipertahankan agar layar yang belum ditulis ulang ikut berganti rupa.
-    paper: '#0B1622',
-    paperDeep: '#12263A',
-    navy: '#E6EEF5',
-    blue: '#2FD1C3',
-    teal: '#2FD1C3',
-    white: '#12263A',
-    warn: '#3A2A1E',
-    warnEdge: '#FF9F43',
+    paper: '#F2F5F9',
+    paperDeep: '#E8EEF5',
+    navy: '#1B2733',
+    blue: '#0B67B2',
+    teal: '#0B67B2',
+    white: '#FFFFFF',
+    warn: '#FFF3E0',
+    warnEdge: '#E65100',
 };
 
+// Skala magnitudo untuk latar terang (data, bukan hiasan); cukup gelap agar angka besar terbaca (>= 3:1).
 export function magnitudeColor(m: number | null | undefined): string {
-    // Skala magnitudo versi terang untuk latar gelap (data, bukan hiasan).
-    if (m == null) return '#8FA6BA';
-    if (m >= 6.5) return '#FF4D7A';
-    if (m >= 5.5) return '#FF6B4A';
-    if (m >= 4.5) return '#FF9F43';
-    return '#F2C94C';
+    if (m == null) return '#566677';
+    if (m >= 6.5) return '#B71C1C';
+    if (m >= 5.5) return '#D32F2F';
+    if (m >= 4.5) return '#E65100';
+    if (m >= 4) return '#B7791F';
+    return '#2E7D32';
 }

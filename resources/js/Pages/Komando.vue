@@ -77,11 +77,12 @@ function select(key) {
 
 function onMq(e) { mobile.value = e.matches; }
 onMounted(() => {
+    document.body.classList.add('cmd-lock');
     mq = window.matchMedia('(max-width: 767px)');
     mobile.value = mq.matches;
     mq.addEventListener('change', onMq);
 });
-onBeforeUnmount(() => { mq?.removeEventListener('change', onMq); clearTimeout(toastTimer); });
+onBeforeUnmount(() => { document.body.classList.remove('cmd-lock'); mq?.removeEventListener('change', onMq); clearTimeout(toastTimer); });
 </script>
 
 <template>
@@ -141,7 +142,8 @@ onBeforeUnmount(() => { mq?.removeEventListener('change', onMq); clearTimeout(to
 </template>
 
 <style>
-body { overflow: hidden; }
+/* Kunci gulir hanya selama halaman ini terbuka (kelas dipasang di onMounted, dicabut di onBeforeUnmount). */
+body.cmd-lock { overflow: hidden; }
 .cmd { position: fixed; inset: 0; height: 100dvh; background: #090d16; color: #e5e7eb; font-family: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace; font-size: 13px; line-height: 1.5; }
 .cmd *, .cmd *::before, .cmd *::after { box-sizing: border-box; }
 .cmd .skip { position: absolute; left: 8px; top: -60px; z-index: 2000; padding: 8px 12px; background: #fff; color: #111; }

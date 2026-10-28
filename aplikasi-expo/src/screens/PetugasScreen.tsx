@@ -31,7 +31,7 @@ async function authed(token: string, method: string, path: string, body?: unknow
     }
 }
 
-const URGENCY: Record<string, { label: string; color: string }> = { critical: { label: 'Kritis', color: '#FF4D7A' }, high: { label: 'Tinggi', color: '#FF6B4A' }, medium: { label: 'Sedang', color: '#FF9F43' }, low: { label: 'Rendah', color: '#5AA9FF' } };
+const URGENCY: Record<string, { label: string; color: string }> = { critical: { label: 'Kritis', color: '#B71C1C' }, high: { label: 'Tinggi', color: '#D32F2F' }, medium: { label: 'Sedang', color: '#E65100' }, low: { label: 'Rendah', color: '#0B67B2' } };
 
 export default function PetugasScreen() {
     const [token, setToken] = useState<string | null>(null);
@@ -139,7 +139,7 @@ export default function PetugasScreen() {
                 <Reveal index={1}>
                     <Text style={st.h}>Ringkasan logistik</Text>
                     <View style={st.tiles}>
-                        {([['Permintaan terbuka', summary.demands_open, '#5AA9FF'], ['Kritis', summary.demands_critical, '#FF4D7A'], ['Pengiriman aktif', summary.dispatches_active, '#2FD1C3'], ['Segera kedaluwarsa', summary.batches_expiring, '#FF9F43']] as const).map(([k, v, c]) => (
+                        {([['Permintaan terbuka', summary.demands_open, '#0B67B2'], ['Kritis', summary.demands_critical, '#B71C1C'], ['Pengiriman aktif', summary.dispatches_active, '#2E7D32'], ['Segera kedaluwarsa', summary.batches_expiring, '#E65100']] as const).map(([k, v, c]) => (
                             <View key={k} style={[st.tile, { borderTopColor: c }]}><Text style={[st.tileVal, { color: c }]}>{angka(v)}</Text><Text style={st.tileKey}>{k}</Text></View>
                         ))}
                     </View>
@@ -156,7 +156,7 @@ export default function PetugasScreen() {
                             <View key={c.id} style={st.row}>
                                 <View style={st.rowHead}><Text style={st.val}>{c.name}</Text><Text style={st.badge}>{c.role}</Text></View>
                                 <Text style={st.muted}>{c.code} · {c.current_occupants} / {c.capacity_people} orang tercatat</Text>
-                                <View style={st.bar}><View style={[st.barFill, { width: `${pct}%`, backgroundColor: pct > 90 ? '#FF4D7A' : COLORS.accent }]} /></View>
+                                <View style={st.bar}><View style={[st.barFill, { width: `${pct}%`, backgroundColor: pct > 90 ? '#B71C1C' : COLORS.accent }]} /></View>
                             </View>
                         );
                     })}
@@ -206,7 +206,7 @@ const st = StyleSheet.create({
     sub: { color: COLORS.muted, fontSize: 13, lineHeight: 19, marginTop: 2, marginBottom: 10 },
     card: { backgroundColor: COLORS.surface, borderRadius: 8, padding: 16, gap: 8 },
     label: { fontSize: 13, fontWeight: '700', color: COLORS.ink },
-    input: { borderWidth: 1, borderColor: COLORS.edge, borderRadius: 8, paddingHorizontal: 12, minHeight: 48, fontSize: 15, color: COLORS.ink },
+    input: { fontFamily: 'Barlow_400Regular', borderWidth: 1, borderColor: COLORS.edge, borderRadius: 8, paddingHorizontal: 12, minHeight: 48, fontSize: 15, color: COLORS.ink },
     err: { color: COLORS.danger, fontSize: 13 },
     btn: { backgroundColor: COLORS.navy, borderRadius: 8, minHeight: 50, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
     btnText: { color: COLORS.surface, fontSize: 16, fontWeight: '700' },

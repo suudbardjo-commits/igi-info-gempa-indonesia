@@ -20,7 +20,7 @@ function hostOf(url: string): string {
     }
 }
 
-export default function WebScreen() {
+export default function WebScreen({ path = '/' }: { path?: string }) {
     const web = useRef<WebView>(null);
     const [canGoBack, setCanGoBack] = useState(false);
     const [failure, setFailure] = useState<string | null>(null);
@@ -90,7 +90,7 @@ export default function WebScreen() {
                 <StatusBar style="dark" />
                 <WebView
                     ref={web}
-                    source={{ uri: SERVER_URL }}
+                    source={{ uri: SERVER_URL + path }}
                     style={styles.fill}
                     originWhitelist={['https://*', 'http://*', 'tel:*', 'mailto:*']}
                     onShouldStartLoadWithRequest={shouldLoad}

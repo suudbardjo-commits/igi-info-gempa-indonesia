@@ -289,7 +289,7 @@ const st = StyleSheet.create({
     fill: { flex: 1, backgroundColor: COLORS.bg },
     pad: { padding: 14, paddingBottom: 40 },
     title: { fontFamily: 'head', fontSize: 30, fontWeight: '800', color: COLORS.ink, marginBottom: 8 },
-    input: { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.ink, paddingHorizontal: 14, minHeight: 50, fontSize: 16, color: COLORS.ink, fontFamily: 'PublicSans_400Regular' },
+    input: { backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.ink, paddingHorizontal: 14, minHeight: 50, fontSize: 16, color: COLORS.ink, fontFamily: 'Barlow_400Regular' },
     result: { borderBottomWidth: 1, borderBottomColor: COLORS.edge, padding: 12, minHeight: 48, justifyContent: 'center' },
     val: { color: COLORS.ink, fontSize: 14, fontWeight: '700' },
     err: { color: COLORS.danger, fontSize: 12, marginVertical: 6 },

@@ -35,8 +35,8 @@ const st = StyleSheet.create({
     box: { gap: 8 },
     intro: { color: COLORS.muted, fontSize: 14, lineHeight: 21, marginBottom: 6 },
     label: { color: COLORS.ink, fontSize: 13, fontWeight: '600' },
-    input: { borderWidth: 1, borderColor: COLORS.edge, borderRadius: 4, paddingHorizontal: 12, minHeight: 46, fontSize: 15, color: COLORS.ink, backgroundColor: COLORS.surface },
+    input: { fontFamily: 'Barlow_400Regular', borderWidth: 1, borderColor: COLORS.edge, borderRadius: 4, paddingHorizontal: 12, minHeight: 46, fontSize: 15, color: COLORS.ink, backgroundColor: COLORS.surface },
     err: { color: COLORS.danger, fontSize: 13 },
-    btn: { minHeight: 48, borderRadius: 4, backgroundColor: COLORS.navy, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
-    btnText: { color: COLORS.surface, fontSize: 15, fontWeight: '600' },
+    btn: { minHeight: 48, borderRadius: 4, backgroundColor: COLORS.accent, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
+    btnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
 });
