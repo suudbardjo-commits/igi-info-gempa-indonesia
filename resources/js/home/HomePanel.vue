@@ -1,6 +1,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
 import { computed, onMounted, ref } from 'vue';
+import CountUp from './CountUp.vue';
 import { MAG, TIPS, WAKTU, lalu, mag1, magnitudeColor, num, waktuWib } from './format';
 
 // Isi panel beranda (panel kiri di desktop, bottom sheet di ponsel): sama dengan lembar bawah aplikasi Android.
@@ -86,7 +87,7 @@ const wxc = computed(() => wx.value.data?.current ?? null);
 
         <section v-if="selected && sp" class="block selected" aria-labelledby="sel-h">
             <div class="row"><h2 id="sel-h" class="kicker accent">Gempa terpilih</h2><button type="button" class="link" @click="emit('clear')">Tutup</button></div>
-            <div class="sel-top"><span class="sel-mag" :style="{ color: magnitudeColor(sp.magnitude) }">{{ mag1(sp.magnitude) }}</span><div><p class="sel-loc">{{ sp.location }}</p><p class="meta">{{ waktuWib(sp.occurred_at) }}, {{ lalu(sp.occurred_at) }}</p></div></div>
+            <div class="sel-top"><span class="sel-mag" :style="{ color: magnitudeColor(sp.magnitude) }"><CountUp :value="Number(sp.magnitude)" :decimals="1" :duration="600" /></span><div><p class="sel-loc">{{ sp.location }}</p><p class="meta">{{ waktuWib(sp.occurred_at) }}, {{ lalu(sp.occurred_at) }}</p></div></div>
             <dl class="facts"><div><dt>Kedalaman</dt><dd>{{ sp.depth_km != null ? `${Math.round(sp.depth_km)} km` : '-' }}</dd></div><div><dt>Koordinat</dt><dd>{{ selected.geometry.coordinates[1].toFixed(2) }}, {{ selected.geometry.coordinates[0].toFixed(2) }}</dd></div><div><dt>Sumber</dt><dd>{{ String(sp.source).toUpperCase() }}</dd></div></dl>
             <p class="body">{{ sp.tsunami_potential ?? 'Informasi tsunami tidak tersedia pada catatan ini. Periksa pembaruan resmi BMKG.' }}</p>
             <div class="actions"><button type="button" class="ghost" @click="share">Bagikan</button><Link href="/komando" class="solid">Simulasi gelombang</Link><Link :href="`/berita/${selected.id}`" class="ghost">Halaman kejadian</Link></div>
@@ -102,7 +103,7 @@ const wxc = computed(() => wx.value.data?.current ?? null);
 
         <section v-if="d.stats.value" class="block" aria-label="Ringkasan angka">
             <div class="panel figures">
-                <div v-for="(f, i) in [['24 jam', d.stats.value.quakes_24h], ['7 hari', d.stats.value.quakes_7d], ['M 5+', d.stats.value.strong_7d], ['Posko', d.stats.value.camps_open]]" :key="f[0]" class="fig" :class="{ rule: i > 0 }"><b>{{ Number(f[1]).toLocaleString('id-ID') }}</b><span>{{ f[0] }}</span></div>
+                <div v-for="(f, i) in [['24 jam', d.stats.value.quakes_24h], ['7 hari', d.stats.value.quakes_7d], ['M 5+', d.stats.value.strong_7d], ['Posko', d.stats.value.camps_open]]" :key="f[0]" class="fig" :class="{ rule: i > 0 }"><b><CountUp :value="Number(f[1])" /></b><span>{{ f[0] }}</span></div>
             </div>
             <p class="meta">Gempa tercatat. M 5+ dihitung 7 hari terakhir; {{ Number(d.stats.value.occupants ?? 0).toLocaleString('id-ID') }} orang tercatat di posko aktif.</p>
         </section>
@@ -246,4 +247,43 @@ const wxc = computed(() => wx.value.data?.current ?? null);
 .phones b { font-family: 'Barlow Condensed', sans-serif; font-size: 34px; color: #c62828; line-height: 1.1; }
 .phones span { font-size: 13px; color: #566677; }
 .foot { margin: 12px 0 28px; font-size: 13px; color: #566677; line-height: 1.5; }
+.block { animation: rise .5s cubic-bezier(.2, .8, .2, 1) both; }
+.block:nth-child(2) { animation-delay: .05s; }
+.block:nth-child(3) { animation-delay: .1s; }
+.block:nth-child(4) { animation-delay: .15s; }
+.block:nth-child(5) { animation-delay: .2s; }
+.block:nth-child(6) { animation-delay: .25s; }
+.block:nth-child(n+7) { animation-delay: .3s; }
+.selected { animation: rise .45s cubic-bezier(.2, .8, .2, 1) both; }
+.panel { transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease; }
+.panel:hover { box-shadow: 0 4px 14px rgba(11, 92, 165, .12); transform: translateY(-1px); border-color: #b9cde2; }
+.chip, .solid, .ghost, .tip, .phones a, .fab { transition: transform .12s ease, background-color .15s ease, box-shadow .15s ease, border-color .15s ease; }
+.chip:hover, .ghost:hover { background: #e1effb; border-color: #0b67b2; }
+.solid:hover { background: #0a5aa0; box-shadow: 0 3px 10px rgba(11, 103, 178, .35); }
+.chip:active, .solid:active, .ghost:active, .tip:active, .phones a:active { transform: scale(.96); }
+.tip:hover { box-shadow: 0 4px 14px rgba(11, 103, 178, .25); transform: translateY(-1px); }
+.phones a:hover { border-color: #c62828; box-shadow: 0 4px 12px rgba(198, 40, 40, .18); transform: translateY(-2px); }
+.events button { transition: background-color .15s ease, padding-left .15s ease; }
+.events button:hover { padding-left: 6px; }
+.events li { animation: slidein .4s ease both; }
+.events li:nth-child(2) { animation-delay: .04s; }
+.events li:nth-child(3) { animation-delay: .08s; }
+.events li:nth-child(4) { animation-delay: .12s; }
+.events li:nth-child(n+5) { animation-delay: .16s; }
+.chart i { transform-origin: bottom; animation: grow .7s cubic-bezier(.2, .8, .2, 1) both; transition: filter .15s ease; }
+.chart button:hover i { filter: brightness(1.12); }
+.chart button:nth-child(2) i { animation-delay: .05s; }
+.chart button:nth-child(3) i { animation-delay: .1s; }
+.chart button:nth-child(4) i { animation-delay: .15s; }
+.chart button:nth-child(5) i { animation-delay: .2s; }
+.chart button:nth-child(6) i { animation-delay: .25s; }
+.chart button:nth-child(7) i { animation-delay: .3s; }
+.alert-num { animation: blink 1.8s ease-in-out infinite; }
+.menu a b { transition: color .15s ease, transform .15s ease; display: inline-block; }
+.menu a:hover b { transform: translateX(4px); }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes slidein { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+@keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes blink { 50% { opacity: .6; } }
+@media (prefers-reduced-motion: reduce) { .block, .selected, .events li, .chart i, .alert-num { animation: none; } .panel, .tip, .phones a, .menu a b, .events button { transition: none; transform: none; } }
 </style>

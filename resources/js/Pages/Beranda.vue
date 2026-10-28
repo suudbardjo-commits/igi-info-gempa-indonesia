@@ -104,6 +104,12 @@ body.home-lock { overflow: hidden; }
 .home .fab { position: absolute; z-index: 1150; right: 10px; bottom: 36px; width: 44px; height: 44px; display: grid; place-items: center; background: #fff; color: #0b67b2; border: 0; border-radius: 8px; box-shadow: 0 1px 4px rgba(0, 0, 0, .3); cursor: pointer; }
 .home .fab:disabled { opacity: .5; cursor: not-allowed; }
 .home .fab:focus-visible { outline: 2px solid #0b67b2; outline-offset: 2px; }
+.home .fab:hover:not(:disabled) { transform: scale(1.08); box-shadow: 0 3px 10px rgba(0, 0, 0, .35); }
+.home .fab:active:not(:disabled) { transform: scale(.94); }
+.home .fab { transition: transform .15s ease, box-shadow .15s ease; }
+.home .mapcol { animation: fadein .8s ease both; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .home .mapcol { animation: none; } .home .fab { transition: none; } }
 .home .lsheet { --sheet-bg: #f2f5f9; --sheet-edge: #d5dee8; --sheet-grip: #c3cfdc; --sheet-radius: 12px; --sheet-pad: 0 0 24px; --sheet-gap: 0; }
 @media (max-width: 767px) {
     .home .stage { display: block; }

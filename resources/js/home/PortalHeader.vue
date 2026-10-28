@@ -58,6 +58,15 @@ nav a[aria-current] { color: #fff; font-weight: 700; border-bottom-color: #fff; 
 .aa:hover, .work:hover { background: #0a4f8f; }
 .aa[aria-pressed='true'] { background: #fff; color: #0b5ca5; }
 .band :is(a, button):focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.band { animation: drop .5s cubic-bezier(.2, .8, .2, 1) both; }
+.tile { transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
+.brand:hover .tile { transform: rotate(-8deg) scale(1.08); }
+nav a { transition: color .15s ease, border-color .2s ease, background-color .15s ease; }
+nav a:hover { border-bottom-color: #8db9e3; }
+.aa, .work { transition: background-color .15s ease, transform .12s ease; }
+.aa:active, .work:active { transform: scale(.95); }
+@keyframes drop { from { transform: translateY(-100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .band { animation: none; } .tile, nav a, .aa, .work { transition: none; } }
 @media (max-width: 900px) { .band { flex-wrap: wrap; height: auto; min-height: 56px; gap: 0 12px; padding-top: 8px; } .tools { margin-left: auto; } nav { order: 3; width: 100%; margin: 0; gap: 0; overflow-x: auto; scrollbar-width: none; } nav a { min-height: 40px; white-space: nowrap; } }
 @media (max-width: 767px) { .brand small { display: none; } }
 </style>

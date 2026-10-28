@@ -40,6 +40,16 @@ html,body,#m{height:100%;margin:0;font-family:Roboto,Arial,Helvetica,sans-serif}
 .leaflet-control-scale-line{font-size:10px;background:#ffffffcc}
 .leaflet-tooltip{font-size:12px;border-radius:6px;border:0;box-shadow:0 1px 4px rgba(0,0,0,.35)}
 @media (prefers-reduced-motion:reduce){.pin .r{animation:none;opacity:.3;transform:scale(2)}}
+.eq{animation:pop .45s cubic-bezier(.2,1.4,.4,1) both;transition:transform .15s ease,box-shadow .15s ease;cursor:pointer}
+.eq:hover{transform:scale(1.22);box-shadow:0 3px 10px rgba(0,0,0,.5)}
+.camp{animation:pop .45s cubic-bezier(.2,1.4,.4,1) both;transition:transform .15s ease}
+.camp:hover{transform:scale(1.2)}
+.pin .p{animation:drop .5s cubic-bezier(.3,1.5,.5,1) both}
+.me::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid #1a73e8;animation:pr 2s ease-out infinite}
+.me{position:relative}
+@keyframes pop{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes drop{0%{transform:translateY(-26px) rotate(-45deg);opacity:0}100%{transform:translateY(0) rotate(-45deg);opacity:1}}
+@media (prefers-reduced-motion:reduce){.eq,.camp,.pin .p,.me::after{animation:none}.eq:hover,.camp:hover{transform:none}}
 </style></head>
 <body><div id="m"></div>
 <div id="chips"></div>
@@ -91,14 +101,15 @@ function draw(d){evLayer.clearLayers();campLayer.clearLayers();byId={};
   k.on('click',function(){send({type:'event',id:f.id})});byId[f.id]=c});
  (d.camps||[]).forEach(function(f){var c=f.geometry.coordinates;
   L.marker([c[1],c[0]],{icon:L.divIcon({className:'',html:'<div class="camp">P</div>',iconSize:[22,22],iconAnchor:[11,11]}),keyboard:false}).bindTooltip(tip(f.properties.name,f.properties.current_occupants+' / '+f.properties.capacity_people+' orang tercatat'),{direction:'top',offset:[0,-10]}).addTo(campLayer)})}
+function fly(ll,z){map.invalidateSize();var s=map.getSize();if(!s.x||!s.y||isNaN(ll.lat)||isNaN(ll.lng))return;map.flyTo(ll,z,{duration:.8})}
 function select(id,bottom,mag){selLayer.clearLayers();var c=byId[id];if(!c)return;var m=mag||0,cc=col(m);
  L.marker([c[1],c[0]],{icon:L.divIcon({className:'',html:'<div class="pin" style="--c:'+cc+'"><i class="r"></i><i class="r"></i><div class="p" style="background:'+cc+'"></div><div class="n">'+m.toFixed(1)+'</div></div>',iconSize:[0,0]}),interactive:false,keyboard:false,zIndexOffset:5000}).addTo(selLayer);
  var z=Math.max(map.getZoom(),6.5);var p=map.project([c[1],c[0]],z).add([0,(bottom||0)/2]);
- map.flyTo(map.unproject(p,z),z,{duration:.8})}
+ fly(map.unproject(p,z),z)}
 function me(lat,lng,acc,bottom){meLayer.clearLayers();
  if(acc&&acc>0)L.circle([lat,lng],{radius:acc,color:'#1a73e8',weight:1,fillColor:'#1a73e8',fillOpacity:.12,interactive:false}).addTo(meLayer);
  L.marker([lat,lng],{icon:L.divIcon({className:'',html:'<div class="me"></div>',iconSize:[16,16],iconAnchor:[8,8]}),interactive:false,keyboard:false}).addTo(meLayer);
- var z=Math.max(map.getZoom(),9);var p=map.project([lat,lng],z).add([0,(bottom||0)/2]);map.flyTo(map.unproject(p,z),z,{duration:.8})}
+ var z=Math.max(map.getZoom(),9);var p=map.project([lat,lng],z).add([0,(bottom||0)/2]);fly(map.unproject(p,z),z)}
 function fit(bottom){map.fitBounds([[-11.5,94.5],[6.5,141.5]],{paddingBottomRight:[0,bottom||0],animate:true})}
 function drawFaults(g){faultLayer.clearLayers();L.geoJSON(g,{style:function(){return{color:'#e65100',weight:1.5,opacity:.9,dashArray:'5, 5'}},onEachFeature:function(f,l){var p=f.properties||{};l.bindTooltip(tip(p.name||'Sesar',(p.slip_type||'')+(p.slip_rate_mm_yr!=null?' · '+p.slip_rate_mm_yr+' mm/tahun':'')),{sticky:true})}}).addTo(faultLayer);faultsLoaded=true}
 var chips=document.getElementById('chips');
