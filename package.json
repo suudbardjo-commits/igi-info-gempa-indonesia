@@ -5,7 +5,8 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "test:sw": "node --test tests/js/sw.test.mjs"
+        "test:sw": "node --test tests/js/sw.test.mjs",
+        "test:cmd": "node --test tests/js/command.test.mjs"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
@@ -21,6 +22,7 @@
     "dependencies": {
         "@fontsource-variable/big-shoulders-display": "^5.3.0",
         "@fontsource-variable/figtree": "^5.3.0",
+        "@fontsource-variable/jetbrains-mono": "^5.3.0",
         "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
         "@inertiajs/vue3": "^3.9.1",
         "dexie": "^4.4.7",

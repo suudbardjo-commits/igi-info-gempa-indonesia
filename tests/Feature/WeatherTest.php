@@ -409,3 +409,41 @@ describe('API berita untuk aplikasi', function () {
         $this->getJson('/api/v1/news?limit=999')->assertStatus(422);
     });
 });
+
+describe('proksi BMKG InaTEWS', function () {
+    it('hanya tiga umpan diizinkan; respons dibungkus dengan waktu ambil dan di-cache', function () {
+        Cache::flush();
+        Http::fake(['data.bmkg.go.id/*' => Http::response(['Infogempa' => ['gempa' => ['Magnitude' => '5.4', 'Coordinates' => '5.59,125.27']]])]);
+
+        $this->getJson('/api/v1/bmkg/autogempa')->assertOk()->assertJsonPath('data.Infogempa.gempa.Magnitude', '5.4')->assertJsonPath('is_stale', false);
+        $this->getJson('/api/v1/bmkg/autogempa')->assertOk();
+        Http::assertSentCount(1);
+        $this->getJson('/api/v1/bmkg/https://evil.example')->assertNotFound();
+        $this->getJson('/api/v1/bmkg/rahasia')->assertNotFound();
+    });
+
+    it('gagal tanpa cache = 502 terkendali; gagal dengan cache = data lama ditandai basi', function () {
+        Cache::flush();
+        Http::fake(['data.bmkg.go.id/*' => Http::sequence()->push('', 500)->push(['Infogempa' => ['gempa' => []]])->push('', 500)]);
+
+        $this->getJson('/api/v1/bmkg/gempaterkini')->assertStatus(502)->assertJsonPath('status', 'error');
+        $this->getJson('/api/v1/bmkg/gempaterkini')->assertOk();
+        $this->travel(2)->minutes();
+        $this->getJson('/api/v1/bmkg/gempaterkini')->assertOk()->assertJsonPath('is_stale', true);
+    });
+});
+
+describe('pusat komando', function () {
+    it('/komando dibuka publik dan memuat data sesar dengan atribusi lisensi', function () {
+        $this->get('/komando')->assertOk()->assertInertia(fn (Inertia\Testing\AssertableInertia $p) => $p->component('Komando'));
+
+        $geo = json_decode(file_get_contents(public_path('data/sesar-indonesia.geojson')), true);
+        expect($geo['type'])->toBe('FeatureCollection')->and($geo['license'])->toBe('CC-BY-SA-4.0')->and($geo['attribution'])->toContain('GEM Global Active Faults')
+            ->and(count($geo['features']))->toBeGreaterThan(100);
+        foreach (array_slice($geo['features'], 0, 20) as $f) {
+            expect($f['geometry']['type'])->toBe('MultiLineString');
+            [$lng, $lat] = $f['geometry']['coordinates'][0][0];
+            expect($lng)->toBeFloat()->and($lat)->toBeFloat(); // urutan GeoJSON [bujur, lintang]
+        }
+    });
+});

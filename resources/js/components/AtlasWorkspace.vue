@@ -195,7 +195,7 @@ onBeforeUnmount(() => { clearInterval(clock); clearInterval(alertClock); window.
                     <p v-if="placeState === 'loading'">Mencari…</p><p v-else-if="placeState === 'error'">Pencarian wilayah gagal. Coba lagi.</p><p v-else-if="placeState === 'empty'">Tidak ada wilayah dengan nama itu.</p>
                     <ul v-else><li v-for="r in placeResults" :key="r.id"><button type="button" @click="choosePlace(r)"><b>{{ r.name }}</b><small>{{ r.admin || 'Indonesia' }}</small></button><Link :href="'/cuaca?lat=' + r.latitude.toFixed(2) + '&lon=' + r.longitude.toFixed(2) + '&nama=' + encodeURIComponent(r.name) + (r.province ? '&prov=' + encodeURIComponent(r.province) : '')">Cuaca</Link></li></ul>
                 </div></div>
-            <nav aria-label="Navigasi utama"><Link href="/" aria-current="page">Pantauan</Link><Link href="/cuaca">Cuaca</Link><Link href="/berita">Berita</Link><Link href="/panduan">Panduan</Link><Link href="/tentang">Tentang</Link></nav>
+            <nav aria-label="Navigasi utama"><Link href="/" aria-current="page">Pantauan</Link><Link href="/cuaca">Cuaca</Link><Link href="/komando">Komando</Link><Link href="/berita">Berita</Link><Link href="/panduan">Panduan</Link><Link href="/tentang">Tentang</Link></nav>
             <button class="text-size" type="button" :aria-pressed="big" aria-label="Perbesar ukuran teks" @click="toggle"><Icon name="text" :size="18" /></button>
             <Link :href="workHref" class="account"><Icon name="user" :size="16" /><span>{{ page.props.auth?.user ? 'Ruang kerja' : 'Petugas' }}</span></Link>
         </header>

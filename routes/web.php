@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('beranda');
 Route::get('peta', MapController::class)->name('peta');
 Route::get('cuaca', \App\Http\Controllers\WeatherPageController::class)->name('cuaca');
+Route::get('komando', fn () => \Inertia\Inertia::render('Komando'))->name('komando');
 Route::get('berita', [NewsController::class, 'index'])->name('berita');
 Route::get('berita/{id}', [NewsController::class, 'show'])->name('berita.show');
 Route::get('panduan', PanduanController::class)->name('panduan');

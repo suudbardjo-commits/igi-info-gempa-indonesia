@@ -275,7 +275,7 @@ const compareMixed = computed(() => new Set(compareData.value.map((c) => c.state
         <a class="skip" href="#wx-main">Lewati ke isi cuaca</a>
         <header class="wx-header">
             <Link href="/" class="identity" aria-label="IGI, Info Gempa Indonesia"><BrandMark :size="34" /><span><b>IGI</b><small>Info Gempa Indonesia</small></span></Link>
-            <nav aria-label="Navigasi utama"><Link href="/">Pantauan</Link><Link href="/cuaca" aria-current="page">Cuaca</Link><Link href="/berita">Berita</Link><Link href="/panduan">Panduan</Link><Link href="/tentang">Tentang</Link></nav>
+            <nav aria-label="Navigasi utama"><Link href="/">Pantauan</Link><Link href="/cuaca" aria-current="page">Cuaca</Link><Link href="/komando">Komando</Link><Link href="/berita">Berita</Link><Link href="/panduan">Panduan</Link><Link href="/tentang">Tentang</Link></nav>
             <button class="icon-btn" type="button" :aria-pressed="big" aria-label="Perbesar ukuran teks" @click="toggle"><Icon name="text" :size="18" /></button>
             <Link :href="workHref" class="account"><Icon name="user" :size="16" /><span>{{ page.props.auth?.user ? 'Ruang kerja' : 'Petugas' }}</span></Link>
         </header>

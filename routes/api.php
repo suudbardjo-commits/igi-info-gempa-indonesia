@@ -37,6 +37,7 @@ Route::prefix('v1')->group(function () {
         Route::get('announcements', [AnnouncementController::class, 'index']);
         Route::get('sources/status', [WeatherController::class, 'sources']);
         Route::get('news', \App\Http\Controllers\Api\NewsController::class);
+        Route::get('bmkg/{feed}', \App\Http\Controllers\Api\BmkgFeedController::class)->whereIn('feed', ['autogempa', 'gempaterkini', 'gempadirasakan']);
         Route::get('disasters-export', DisasterExportController::class)->middleware('throttle:10,1,ekspor');
 
         // Cuaca dan peringatan dini: memanggil penyedia luar lewat cache, jadi diberi batas sendiri yang lebih ketat.
