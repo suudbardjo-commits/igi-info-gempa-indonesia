@@ -13,11 +13,37 @@ export function validServerUrl(url: string): boolean {
 }
 export const serverOk = () => validServerUrl(SERVER_URL);
 
-export async function loadServerUrl(): Promise<string> {
+/** Apakah alamat itu menjawab seperti server IGI? Batas waktu pendek supaya aplikasi tidak menggantung saat dibuka. */
+async function menjawab(url: string, ms = 4000): Promise<boolean> {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), ms);
     try {
-        const saved = await AsyncStorage.getItem(KEY);
-        if (saved && validServerUrl(saved)) SERVER_URL = saved;
-    } catch { /* pakai bawaan */ }
+        const res = await fetch(`${url}/api/v1/ping`, { headers: { Accept: 'application/json' }, signal: ctl.signal });
+        const body = await res.json().catch(() => null);
+        return res.ok && body?.status === 'ok';
+    } catch {
+        return false;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+/**
+ * Alamat yang dipakai saat aplikasi dibuka. Alamat tersimpan (diketik pengguna) hanya dipakai bila masih menjawab. Bila sudah
+ * mati dan alamat bawaan (dari pembaruan terbaru) hidup, alamat bawaan dipakai dan yang basi dibuang, jadi alamat terowongan
+ * yang berganti tidak perlu diketik ulang di tiap HP.
+ */
+export async function loadServerUrl(): Promise<string> {
+    let saved: string | null = null;
+    try { saved = await AsyncStorage.getItem(KEY); } catch { /* pakai bawaan */ }
+    if (!saved || !validServerUrl(saved) || saved === DEFAULT_URL) return SERVER_URL;
+    const [savedOk, defaultOk] = await Promise.all([menjawab(saved), validServerUrl(DEFAULT_URL) ? menjawab(DEFAULT_URL) : Promise.resolve(false)]);
+    if (savedOk) {
+        SERVER_URL = saved;
+    } else if (defaultOk) {
+        SERVER_URL = DEFAULT_URL;
+        try { await AsyncStorage.removeItem(KEY); } catch { /* abaikan */ }
+    }
     return SERVER_URL;
 }
 

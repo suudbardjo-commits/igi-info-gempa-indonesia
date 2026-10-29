@@ -4,7 +4,8 @@ import { Barlow_400Regular, Barlow_500Medium, Barlow_600SemiBold, Barlow_700Bold
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import * as Updates from 'expo-updates';
+import { Animated, AppState, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from './src/Text';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, loadServerUrl, serverOk } from './src/config';
@@ -39,6 +40,25 @@ export default function App() {
     const slide = useRef(new Animated.Value(0)).current;
 
     useEffect(() => { loadServerUrl().then(() => setReady(true)); }, []);
+    // Pembaruan (termasuk alamat server baru) diambil saat aplikasi dibuka dan saat kembali ke layar, lalu langsung dipakai.
+    useEffect(() => {
+        if (__DEV__ || !Updates.isEnabled) return undefined;
+        let busy = false;
+        const check = async () => {
+            if (busy) return;
+            busy = true;
+            try {
+                const r = await Updates.checkForUpdateAsync();
+                if (r.isAvailable) {
+                    await Updates.fetchUpdateAsync();
+                    await Updates.reloadAsync();
+                }
+            } catch { /* tanpa internet: coba lagi nanti */ } finally { busy = false; }
+        };
+        check();
+        const sub = AppState.addEventListener('change', (s) => { if (s === 'active') check(); });
+        return () => sub.remove();
+    }, []);
     useEffect(() => {
         Animated.spring(slide, { toValue: TABS.findIndex((t) => t.key === tab), useNativeDriver: true, speed: 18, bounciness: 8 }).start();
     }, [tab, slide]);
