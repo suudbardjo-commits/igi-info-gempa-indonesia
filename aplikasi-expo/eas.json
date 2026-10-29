@@ -11,7 +11,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_IGI_URL": "https://persons-test-loud-comic.trycloudflare.com"
+        "EXPO_PUBLIC_IGI_URL": "https://split-lower-scenic-refresh.trycloudflare.com"
       }
     },
     "production": {
@@ -21,7 +21,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_IGI_URL": "https://persons-test-loud-comic.trycloudflare.com"
+        "EXPO_PUBLIC_IGI_URL": "https://split-lower-scenic-refresh.trycloudflare.com"
       }
     }
   },
