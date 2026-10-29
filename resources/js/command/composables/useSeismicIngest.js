@@ -15,7 +15,7 @@ const USGS_RETRY_MS = 120_000;
  *
  * @param feed hasil useBmkgFeed
  * @param callbacks onDetected(q): gempa baru dari EMSC yang belum punya pasangan resmi
- *                  onValidated(official, via): gempa resmi baru atau pasangan resmi bagi kejadian EMSC
+ *                  onValidated(official, via, emscKey): pasangan resmi bagi kejadian EMSC yang tadinya menunggu
  */
 export function useSeismicIngest(feed, { onDetected = null, onValidated = null } = {}) {
     const emsc = shallowRef([]);
@@ -108,7 +108,7 @@ export function useSeismicIngest(feed, { onDetected = null, onValidated = null }
         for (const [emscKey, o] of m) {
             if (validatedKeys.has(`m:${emscKey}`)) continue;
             validatedKeys.add(`m:${emscKey}`);
-            if (detected.has(emscKey)) onValidated?.(o, 'emsc');
+            if (detected.has(emscKey)) onValidated?.(o, 'emsc', emscKey);
         }
     });
 

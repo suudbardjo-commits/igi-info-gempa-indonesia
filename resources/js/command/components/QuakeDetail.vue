@@ -11,7 +11,13 @@ const VAL = {
     fallback: 'DATA CADANGAN USGS: BMKG tidak dapat dihubungi, bukan data resmi Indonesia',
     official: 'DATA RESMI BMKG',
 };
-const validationText = computed(() => VAL[props.quake?.validation ?? 'official']);
+const validationText = computed(() => {
+    const q = props.quake;
+    // EMSC mencakup tepi wilayah (Filipina, Timor, PNG) yang tidak dilaporkan BMKG: setelah 15 menit tanpa pasangan, jelaskan.
+    if (q?.validation === 'pending' && Date.now() - q.time > 15 * 60_000) return 'BELUM DIKONFIRMASI BMKG (lebih dari 15 menit): mungkin di luar wilayah pantauan BMKG';
+
+    return VAL[q?.validation ?? 'official'];
+});
 const shakeFailed = ref(false);
 const shakeLoaded = ref(false);
 watch(() => props.quake?.key, () => { shakeFailed.value = false; shakeLoaded.value = false; });

@@ -101,15 +101,14 @@ function draw(d){evLayer.clearLayers();campLayer.clearLayers();byId={};
   k.on('click',function(){send({type:'event',id:f.id})});byId[f.id]=c});
  (d.camps||[]).forEach(function(f){var c=f.geometry.coordinates;
   L.marker([c[1],c[0]],{icon:L.divIcon({className:'',html:'<div class="camp">P</div>',iconSize:[22,22],iconAnchor:[11,11]}),keyboard:false}).bindTooltip(tip(f.properties.name,f.properties.current_occupants+' / '+f.properties.capacity_people+' orang tercatat'),{direction:'top',offset:[0,-10]}).addTo(campLayer)})}
-function fly(ll,z){map.invalidateSize();var s=map.getSize();if(!s.x||!s.y||isNaN(ll.lat)||isNaN(ll.lng))return;map.flyTo(ll,z,{duration:.8})}
+function fly(lat,lng,z,bottom){map.invalidateSize();var s=map.getSize();if(!s.x||!s.y||!isFinite(z)||!isFinite(lat)||!isFinite(lng))return;var p=map.project([lat,lng],z).add([0,(bottom||0)/2]);var ll=map.unproject(p,z);if(isNaN(ll.lat)||isNaN(ll.lng))return;map.flyTo(ll,z,{duration:.8})}
 function select(id,bottom,mag){selLayer.clearLayers();var c=byId[id];if(!c)return;var m=mag||0,cc=col(m);
  L.marker([c[1],c[0]],{icon:L.divIcon({className:'',html:'<div class="pin" style="--c:'+cc+'"><i class="r"></i><i class="r"></i><div class="p" style="background:'+cc+'"></div><div class="n">'+m.toFixed(1)+'</div></div>',iconSize:[0,0]}),interactive:false,keyboard:false,zIndexOffset:5000}).addTo(selLayer);
- var z=Math.max(map.getZoom(),6.5);var p=map.project([c[1],c[0]],z).add([0,(bottom||0)/2]);
- fly(map.unproject(p,z),z)}
+ fly(c[1],c[0],Math.max(map.getZoom()||5,6.5),bottom)}
 function me(lat,lng,acc,bottom){meLayer.clearLayers();
  if(acc&&acc>0)L.circle([lat,lng],{radius:acc,color:'#1a73e8',weight:1,fillColor:'#1a73e8',fillOpacity:.12,interactive:false}).addTo(meLayer);
  L.marker([lat,lng],{icon:L.divIcon({className:'',html:'<div class="me"></div>',iconSize:[16,16],iconAnchor:[8,8]}),interactive:false,keyboard:false}).addTo(meLayer);
- var z=Math.max(map.getZoom(),9);var p=map.project([lat,lng],z).add([0,(bottom||0)/2]);fly(map.unproject(p,z),z)}
+ fly(lat,lng,Math.max(map.getZoom()||5,9),bottom)}
 function fit(bottom){map.fitBounds([[-11.5,94.5],[6.5,141.5]],{paddingBottomRight:[0,bottom||0],animate:true})}
 function drawFaults(g){faultLayer.clearLayers();L.geoJSON(g,{style:function(){return{color:'#e65100',weight:1.5,opacity:.9,dashArray:'5, 5'}},onEachFeature:function(f,l){var p=f.properties||{};l.bindTooltip(tip(p.name||'Sesar',(p.slip_type||'')+(p.slip_rate_mm_yr!=null?' · '+p.slip_rate_mm_yr+' mm/tahun':'')),{sticky:true})}}).addTo(faultLayer);faultsLoaded=true}
 var chips=document.getElementById('chips');

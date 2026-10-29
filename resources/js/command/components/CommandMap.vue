@@ -99,6 +99,7 @@ function focus(q, { zoom = 7 } = {}) {
     if (m.getSize().x === 0) return;
     m.stop();
     const target = centerFor([q.lat, q.lng], zoom);
+    if (!Number.isFinite(target.lat) || !Number.isFinite(target.lng)) return; // ukuran kontainer/inset tak sah: jangan memicu galat Leaflet
     if (reduced() || props.blackout) m.setView(target, zoom, { animate: false });
     else m.flyTo(target, zoom, { duration: 1.1 });
 }
@@ -191,7 +192,7 @@ function applyBlackout(on) {
     } else {
         m.removeLayer(coastLayer);
         (currentBase ?? bases.Gelap).addTo(m);
-        if (faultsWereOn) faultLayer.addTo(m);
+        if (faultsWereOn) { faultLayer.addTo(m); loadFaults(); }
         waveLayer.addTo(m);
     }
     el.value?.classList.toggle('cc-black', on);
@@ -262,7 +263,7 @@ onMounted(() => {
     L.control.layers({ Gelap: dark, Jalan: street, Satelit: satellite }, { 'Sesar aktif': faultLayer, 'Gelombang P / S': waveLayer, 'Gempa terkini': recentLayer, 'Laporan warga': reportLayer }, { position: 'topright', collapsed: window.innerWidth < 768 }).addTo(m);
     m.on('overlayadd', (e) => { if (e.layer === faultLayer) loadFaults(); });
     faultLayer.addTo(m);
-    loadFaults();
+    if (!props.blackout) loadFaults(); // Blackout: tidak mengunduh data sesar
 
     resizeObserver = new ResizeObserver(() => m.invalidateSize());
     resizeObserver.observe(el.value);

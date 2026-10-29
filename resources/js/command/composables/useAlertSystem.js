@@ -40,9 +40,14 @@ export function useAlertSystem() {
 
     function siren(q) {
         const level = alertLevelFor(q);
-        if (!level || seen(sirened, q)) return;
-        sirened.push(q);
-        alarm.playSeismicAlarm(level === 'danger' ? 15 : 8, level);
+        if (!level) return;
+        const prev = sirened.find((e) => e.key === q.key || sameEvent(e, q));
+        // Sirene satu kali per kejadian, kecuali naik dari 'warning' (M >= 5) ke 'danger' (BMKG menyatakan tsunami).
+        if (prev && (prev.lvl === 'danger' || level !== 'danger')) return;
+        // Dicatat hanya bila benar-benar berbunyi, supaya mengaktifkan suara sesudah kejadian tidak menghilangkan sirene berikutnya.
+        if (!alarm.playSeismicAlarm(level === 'danger' ? 15 : 8, level)) return;
+        if (prev) prev.lvl = level;
+        else sirened.push({ ...q, lvl: level });
     }
 
     /** Gempa terdeteksi EMSC, belum divalidasi: hanya sirene. */
@@ -53,7 +58,7 @@ export function useAlertSystem() {
     /** Data resmi tiba: sirene bila belum, lalu buletin suara. `via` = 'emsc' bila sebelumnya sudah terdeteksi EMSC. */
     function validated(q, via = null) {
         siren(q);
-        if (seen(spoken, q) || !(q.mag >= 4.5 || alertLevelFor(q))) return;
+        if (!alarm.enabled || seen(spoken, q) || !(q.mag >= 4.5 || alertLevelFor(q))) return;
         spoken.push(q);
         // Jeda singkat agar sirene tidak menutupi awal ucapan.
         setTimeout(() => {

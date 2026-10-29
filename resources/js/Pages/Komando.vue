@@ -66,7 +66,9 @@ const ingest = useSeismicIngest(feed, {
         announce(q, `TERDETEKSI M${q.mag.toFixed(1)} · MENUNGGU VALIDASI BMKG`);
         alert.detected(q);
     },
-    onValidated: (official) => {
+    onValidated: (official, _via, emscKey) => {
+        // Pilihan pengguna ikut pindah dari kejadian EMSC yang menghilang dari daftar ke pasangan resminya.
+        if (selectedKey.value === emscKey) selectedKey.value = official.key;
         toast.value = { q: official, text: `TERVALIDASI BMKG M${official.mag.toFixed(1)}` };
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => { toast.value = null; }, 12_000);
