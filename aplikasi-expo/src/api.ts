@@ -12,7 +12,7 @@ export async function api<T = any>(path: string, signal?: AbortSignal): Promise<
     const timer = setTimeout(() => controller.abort(), 15000);
     signal?.addEventListener('abort', () => controller.abort());
     try {
-        const res = await fetch(`${SERVER_URL}/api/v1/${path}`, { headers: { Accept: 'application/json' }, signal: controller.signal });
+        const res = await fetch(`${SERVER_URL}/api/v1/${path}`, { headers: { Accept: 'application/json', 'ngrok-skip-browser-warning': '1' }, signal: controller.signal });
         const body = await res.json().catch(() => null);
         if (!res.ok || (body && body.status === 'error')) {
             throw new ApiError(body?.error?.message ?? `Server menjawab ${res.status}.`, body?.error?.code ?? `http_${res.status}`, res.status);

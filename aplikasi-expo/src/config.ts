@@ -18,7 +18,7 @@ async function menjawab(url: string, ms = 4000): Promise<boolean> {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), ms);
     try {
-        const res = await fetch(`${url}/api/v1/ping`, { headers: { Accept: 'application/json' }, signal: ctl.signal });
+        const res = await fetch(`${url}/api/v1/ping`, { headers: { Accept: 'application/json', 'ngrok-skip-browser-warning': '1' }, signal: ctl.signal });
         const body = await res.json().catch(() => null);
         return res.ok && body?.status === 'ok';
     } catch {
@@ -51,7 +51,7 @@ export async function saveServerUrl(raw: string): Promise<{ ok: boolean; message
     const url = raw.trim().replace(/\/+$/, '');
     if (!validServerUrl(url)) return { ok: false, message: 'Alamat harus berupa https, contoh: https://igi.contoh.id' };
     try {
-        const res = await fetch(`${url}/api/v1/ping`, { headers: { Accept: 'application/json' } });
+        const res = await fetch(`${url}/api/v1/ping`, { headers: { Accept: 'application/json', 'ngrok-skip-browser-warning': '1' } });
         const body = await res.json().catch(() => null);
         if (!res.ok || body?.status !== 'ok') return { ok: false, message: 'Alamat itu tidak menjawab seperti server IGI.' };
     } catch {

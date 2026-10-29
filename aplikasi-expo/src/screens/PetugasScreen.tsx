@@ -16,7 +16,7 @@ async function authed(token: string, method: string, path: string, body?: unknow
     try {
         const res = await fetch(`${SERVER_URL}/api/v1/${path}`, {
             method,
-            headers: { Accept: 'application/json', Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+            headers: { Accept: 'application/json', 'ngrok-skip-browser-warning': '1', Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
             body: body ? JSON.stringify(body) : undefined,
             signal: controller.signal,
         });
@@ -80,7 +80,7 @@ export default function PetugasScreen() {
         try {
             const res = await fetch(`${SERVER_URL}/api/v1/auth/token`, {
                 method: 'POST',
-                headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+                headers: { Accept: 'application/json', 'ngrok-skip-browser-warning': '1', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: email.trim(), password, device_name: `Aplikasi IGI (${Platform.OS})`.slice(0, 100) }),
             });
             const json = await res.json().catch(() => null);

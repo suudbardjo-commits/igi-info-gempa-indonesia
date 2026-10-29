@@ -109,7 +109,7 @@ export default function WebScreen({ path = '/' }: { path?: string }) {
                     mixedContentMode="never"
                     javaScriptEnabled
                     domStorageEnabled
-                    userAgent={undefined}
+                    userAgent="IGI-App/1.0 (Android; WebView)"
                     applicationNameForUserAgent="IGI-App/1.0"
                 />
                 {loading && !failure && (
