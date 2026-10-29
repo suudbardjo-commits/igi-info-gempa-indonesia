@@ -78,12 +78,17 @@ Set-Clipboard -Value $alamat
 # Alamat berbeda dari yang tertanam di aplikasi: tanam alamat baru dan kirim lewat EAS Update. HP mengambilnya sendiri saat
 # aplikasi dibuka (butuh sudah login EAS di komputer ini; bila belum, langkah ini dilewati dan alamat bisa diketik manual).
 $eas = Join-Path $proyek 'aplikasi-expo\eas.json'
-if (Test-Path $eas) {
+$appJson = Join-Path $proyek 'aplikasi-expo\app.json'
+if ((Test-Path $eas) -and (Test-Path $appJson)) {
     $isi = [IO.File]::ReadAllText($eas)
-    if ($isi -notmatch [regex]::Escape($alamat)) {
+    $isiApp = [IO.File]::ReadAllText($appJson)
+    if (($isi -notmatch [regex]::Escape($alamat)) -or ($isiApp -notmatch [regex]::Escape($alamat))) {
         Write-Host 'Alamat berbeda dari yang ada di aplikasi: mengirim pembaruan ke HP (sekitar 1 menit)...'
+        # eas.json hanya berlaku untuk build APK; app.json extra.igiUrl yang ikut pembaruan OTA (variabel EAS "preview" kosong).
         $baru = [regex]::Replace($isi, '("EXPO_PUBLIC_IGI_URL":\s*")[^"]+(")', ('${1}' + $alamat + '${2}'))
         [IO.File]::WriteAllText($eas, $baru)
+        $baruApp = [regex]::Replace($isiApp, '("igiUrl":\s*")[^"]+(")', ('${1}' + $alamat + '${2}'))
+        [IO.File]::WriteAllText($appJson, $baruApp)
         Push-Location (Join-Path $proyek 'aplikasi-expo')
         npx.cmd --yes eas-cli update --branch preview --environment preview --message "Alamat server otomatis" --non-interactive
         $ok = ($LASTEXITCODE -eq 0)

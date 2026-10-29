@@ -2,9 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
 const KEY = 'igi:server-url';
-const DEFAULT_URL = (process.env.EXPO_PUBLIC_IGI_URL ?? (Constants.expoConfig?.extra?.igiUrl as string | undefined) ?? '').replace(/\/+$/, '');
+const DEFAULT_URL = (process.env.EXPO_PUBLIC_IGI_URL || (Constants.expoConfig?.extra?.igiUrl as string | undefined) || '').replace(/\/+$/, '');
 
-// Alamat server IGI (Laravel). Bawaan dari EXPO_PUBLIC_IGI_URL (eas.json); pengguna bisa menggantinya di aplikasi
+// Alamat server IGI (Laravel). Bawaan dari EXPO_PUBLIC_IGI_URL (eas.json, hanya berlaku untuk build) atau extra.igiUrl di app.json (ikut pembaruan OTA); pengguna bisa menggantinya di aplikasi
 // (disimpan di perangkat), sehingga APK tetap berguna saat alamat terowongan berubah. Hanya alamat publik, bukan rahasia.
 export let SERVER_URL = DEFAULT_URL;
 

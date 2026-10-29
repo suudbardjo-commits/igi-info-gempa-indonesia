@@ -78,6 +78,7 @@
       ]
     ],
     "extra": {
+      "igiUrl": "https://untried-goliath-penholder.ngrok-free.dev",
       "eas": {
         "projectId": "e8633d84-92f5-4e68-a726-ca9701fc33ef"
       }
