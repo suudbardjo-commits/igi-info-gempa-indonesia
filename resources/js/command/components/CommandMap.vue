@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { offsetCenterPx } from '../lib/geo';
+import { DYFI_LEVELS } from '../lib/dyfi';
 import { magnitudeColor } from '../lib/seismic';
 
 const props = defineProps({
@@ -16,6 +17,10 @@ const props = defineProps({
     rs: { type: Number, default: 0 },
     /** Fungsi yang mengembalikan {top, bottom, left, right} px area peta yang tertutup UI (ticker, panel, bottom sheet). */
     getInsets: { type: Function, default: () => ({}) },
+    /** Kelompok laporan warga {lat, lng, count, level, counts}. */
+    reports: { type: Array, default: () => [] },
+    /** Mode Blackout: tanpa ubin peta, kanvas hitam murni + garis pantai, tanpa animasi gelombang. */
+    blackout: { type: Boolean, default: false },
 });
 const emit = defineEmits(['select', 'tiles-error', 'tiles-ok', 'faults-state']);
 
@@ -31,6 +36,12 @@ let faultLayer = null;
 let faultsLoaded = false;
 const recentLayer = L.layerGroup();
 const waveLayer = L.layerGroup();
+const reportLayer = L.layerGroup();
+const coastLayer = L.layerGroup();
+const bases = {};
+let currentBase = null;
+let coastLoaded = false;
+let faultsWereOn = true;
 const userLayer = L.layerGroup();
 let resizeObserver;
 
@@ -88,7 +99,7 @@ function focus(q, { zoom = 7 } = {}) {
     if (m.getSize().x === 0) return;
     m.stop();
     const target = centerFor([q.lat, q.lng], zoom);
-    if (reduced()) m.setView(target, zoom, { animate: false });
+    if (reduced() || props.blackout) m.setView(target, zoom, { animate: false });
     else m.flyTo(target, zoom, { duration: 1.1 });
 }
 
@@ -115,8 +126,8 @@ function drawRecent() {
     recentLayer.clearLayers();
     for (const q of props.quakes) {
         const c = magnitudeColor(q.mag);
-        L.circleMarker([q.lat, q.lng], { radius: 3 + Math.max(0, q.mag - 3) * 1.6, color: '#090D16', weight: 1, fillColor: c, fillOpacity: 0.75 })
-            .bindTooltip(tooltipEl([[`M${q.mag.toFixed(1)}`, true], [q.region]]), { direction: 'top' })
+        L.circleMarker([q.lat, q.lng], { radius: 3 + Math.max(0, q.mag - 3) * 1.6, color: q.validation === 'pending' ? '#FDE68A' : '#090D16', weight: q.validation === 'pending' ? 1.5 : 1, dashArray: q.validation === 'pending' ? '2, 2' : null, fillColor: c, fillOpacity: q.validation === 'pending' ? 0.45 : 0.75 })
+            .bindTooltip(tooltipEl([[`M${q.mag.toFixed(1)}`, true], [q.region], ...(q.validation === 'pending' ? [['Menunggu validasi BMKG']] : q.validation === 'fallback' ? [['Data cadangan USGS']] : [])]), { direction: 'top' })
             .on('click', () => emit('select', q.key))
             .addTo(recentLayer);
     }
@@ -141,6 +152,50 @@ function setWave(circle, km, fillOpacity) {
     const visible = km >= 0.5;
     circle.setRadius(Math.max(1, km * 1000));
     circle.setStyle({ opacity: visible ? 0.9 : 0, fillOpacity: visible ? fillOpacity : 0 });
+}
+
+/** Laporan warga sebagai kelompok titik berwarna (tingkat tertinggi di sel ~11 km); belum diverifikasi. */
+function drawReports() {
+    reportLayer.clearLayers();
+    for (const g of props.reports) {
+        const lv = DYFI_LEVELS[g.level];
+        const rows = [[`${g.count} laporan warga`, true], [`Tidak merasakan ${g.counts.none}, ringan ${g.counts.light}, kuat ${g.counts.strong}`], ['Belum diverifikasi']];
+        L.circleMarker([g.lat, g.lng], { radius: Math.min(18, 5 + g.count * 1.5), color: '#090D16', weight: 1, fillColor: lv.color, fillOpacity: 0.55 })
+            .bindTooltip(tooltipEl(rows), { direction: 'top' }).addTo(reportLayer);
+    }
+}
+
+async function loadCoast() {
+    if (coastLoaded) return;
+    coastLoaded = true;
+    try {
+        const res = await fetch('/data/pantai-indonesia.geojson');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        L.geoJSON(await res.json(), { style: () => ({ color: '#9CA3AF', weight: 1, opacity: 0.9, fill: false, interactive: false }), interactive: false }).addTo(coastLayer);
+    } catch {
+        coastLoaded = false; // peta tetap hitam; garis pantai dicoba lagi saat Blackout dinyalakan ulang
+    }
+}
+
+/** Blackout: buang ubin, sesar, dan lingkaran gelombang; sisakan garis pantai vektor di atas kanvas hitam. */
+function applyBlackout(on) {
+    const m = map.value;
+    if (!m) return;
+    if (on) {
+        faultsWereOn = m.hasLayer(faultLayer);
+        for (const b of Object.values(bases)) m.removeLayer(b);
+        m.removeLayer(faultLayer);
+        m.removeLayer(waveLayer);
+        coastLayer.addTo(m);
+        loadCoast();
+    } else {
+        m.removeLayer(coastLayer);
+        (currentBase ?? bases.Gelap).addTo(m);
+        if (faultsWereOn) faultLayer.addTo(m);
+        waveLayer.addTo(m);
+    }
+    el.value?.classList.toggle('cc-black', on);
+    m.invalidateSize();
 }
 
 async function loadFaults() {
@@ -193,14 +248,18 @@ onMounted(() => {
     const street = L.layerGroup([onTiles(tile('World_Street_Map'))]);
     const satellite = L.layerGroup([onTiles(tile('World_Imagery', { attribution: 'Citra: Esri, Maxar, Earthstar Geographics' })), tile('Reference/World_Boundaries_and_Places', { attribution: '', pane: 'shadowPane' })]);
     dark.addTo(m);
+    Object.assign(bases, { Gelap: dark, Jalan: street, Satelit: satellite });
+    currentBase = dark;
+    m.on('baselayerchange', (e) => { currentBase = e.layer; });
 
     faultLayer = L.layerGroup();
     recentLayer.addTo(m);
     waveLayer.addTo(m);
     userLayer.addTo(m);
+    reportLayer.addTo(m);
 
     // Kontrol layer (toggle): sesar aktif, gelombang P/S, gempa terkini.
-    L.control.layers({ Gelap: dark, Jalan: street, Satelit: satellite }, { 'Sesar aktif': faultLayer, 'Gelombang P / S': waveLayer, 'Gempa terkini': recentLayer }, { position: 'topright', collapsed: window.innerWidth < 768 }).addTo(m);
+    L.control.layers({ Gelap: dark, Jalan: street, Satelit: satellite }, { 'Sesar aktif': faultLayer, 'Gelombang P / S': waveLayer, 'Gempa terkini': recentLayer, 'Laporan warga': reportLayer }, { position: 'topright', collapsed: window.innerWidth < 768 }).addTo(m);
     m.on('overlayadd', (e) => { if (e.layer === faultLayer) loadFaults(); });
     faultLayer.addTo(m);
     loadFaults();
@@ -209,8 +268,10 @@ onMounted(() => {
     resizeObserver.observe(el.value);
 
     drawRecent();
+    drawReports();
     drawEpicenter();
     showUser();
+    if (props.blackout) applyBlackout(true);
     if (props.quake) focus(props.quake);
 });
 
@@ -233,12 +294,14 @@ watch(() => props.userPos, () => {
             paddingTopLeft: [(i.left ?? 0) + 40, (i.top ?? 0) + 40],
             paddingBottomRight: [(i.right ?? 0) + 40, (i.bottom ?? 0) + 40],
             maxZoom: 9,
-            animate: !reduced(),
+            animate: !reduced() && !props.blackout,
         });
     }
 });
-watch(() => props.rp, (v) => setWave(waveP, v, 0));
-watch(() => props.rs, (v) => setWave(waveS, v, 0.12));
+watch(() => props.reports, drawReports);
+watch(() => props.blackout, applyBlackout);
+watch(() => props.rp, (v) => { if (!props.blackout) setWave(waveP, v, 0); });
+watch(() => props.rs, (v) => { if (!props.blackout) setWave(waveS, v, 0.12); });
 
 defineExpose({ focus, recenter: () => focus(props.quake), map });
 </script>
@@ -276,6 +339,11 @@ defineExpose({ focus, recenter: () => focus(props.quake), map });
 .cc-epi i { position: absolute; left: -7px; top: -7px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--c); box-sizing: border-box; opacity: 0; animation: cc-pulse 2.4s ease-out infinite; }
 .cc-epi i:nth-child(2) { animation-delay: 1.2s; }
 @keyframes cc-pulse { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(5); opacity: 0; } }
+/* Mode Blackout: OLED true black, tanpa animasi, tanpa kontrol layer, redup. */
+.cc-map.cc-black, .cc-map.cc-black .leaflet-container { background: #000; }
+.cc-map.cc-black .leaflet-control-layers, .cc-map.cc-black .leaflet-control-attribution { display: none; }
+.cc-map.cc-black .cc-epi i { animation: none; display: none; }
+.cc-map.cc-black .leaflet-zoom-animation, .cc-map.cc-black .leaflet-fade-anim { transition: none !important; }
 .cc-user { width: 14px; height: 14px; background: #f9fafb; border: 2px solid #090d16; transform: rotate(45deg); box-sizing: border-box; }
 @media (prefers-reduced-motion: reduce) { .cc-epi i { animation: none; opacity: .35; transform: scale(2.4); } }
 </style>

@@ -11,6 +11,7 @@ const props = defineProps({
     lastCheckAt: Date,
     tilesError: Boolean,
     faultsState: String,
+    sources: { type: Object, default: null },
 });
 const emit = defineEmits(['refresh']);
 
@@ -19,7 +20,16 @@ const text = computed(() => {
     if (props.status === 'error') return `Gagal mengambil data BMKG${props.lastOkAt ? `; menampilkan data terakhir (${fmtClockWib(props.lastOkAt)})` : ''}.`;
     if (props.stale) return `Data dari cache server, mungkin usang · ${fmtClockWib(props.lastOkAt)}`;
 
-    return `BMKG InaTEWS tersambung${props.via === 'proksi' ? ' (lewat proksi)' : ''} · diperbarui ${fmtClockWib(props.lastOkAt)} · poll tiap 60 dtk`;
+    return `BMKG InaTEWS tersambung${props.via === 'proksi' ? ' (lewat proksi)' : ''} · diperbarui ${fmtClockWib(props.lastOkAt)}`;
+});
+const EMSC = { open: 'tersambung (instan)', connecting: 'menyambung…', closed: 'terputus, mencoba lagi', unsupported: 'tidak didukung' };
+const srcText = computed(() => {
+    const x = props.sources;
+    if (!x) return null;
+    const bmkg = x.bmkg === 'ok' ? 'resmi' : x.bmkg === 'error' ? 'gagal' : 'memuat';
+    const usgs = x.usgsAktif ? 'cadangan AKTIF' : x.usgs === 'error' ? 'cadangan gagal' : 'siaga';
+
+    return `EMSC ${EMSC[x.emsc] ?? x.emsc} · BMKG ${bmkg} · USGS ${usgs}`;
 });
 const bad = computed(() => props.status === 'error' || props.stale);
 </script>
@@ -29,6 +39,7 @@ const bad = computed(() => props.status === 'error' || props.stale);
         <span class="dot" aria-hidden="true"></span>
         <span class="t">{{ text }}</span>
         <button type="button" class="refresh" aria-label="Ambil data sekarang" @click="emit('refresh')">↻</button>
+        <p v-if="srcText" class="sub src">{{ srcText }}</p>
         <p v-if="error && status !== 'error'" class="sub">{{ error }}</p>
         <p v-if="tilesError" class="sub">Peta dasar belum termuat; data gempa tetap tampil.</p>
         <p v-if="faultsState === 'error'" class="sub">Layer sesar aktif gagal dimuat.</p>
@@ -44,5 +55,6 @@ const bad = computed(() => props.status === 'error' || props.stale);
 .refresh:hover { background: #1f2937; }
 .refresh:focus-visible { outline: 2px solid #38bdf8; outline-offset: 1px; }
 .sub { grid-column: 1 / -1; margin: 0; color: #fcd34d; }
+.sub.src { color: #9ca3af; }
 @media (max-width: 767px) { .refresh { min-width: 44px; min-height: 44px; } }
 </style>

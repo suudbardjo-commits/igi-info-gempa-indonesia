@@ -38,6 +38,8 @@ Route::prefix('v1')->group(function () {
         Route::get('sources/status', [WeatherController::class, 'sources']);
         Route::get('news', \App\Http\Controllers\Api\NewsController::class);
         Route::get('bmkg/{feed}', \App\Http\Controllers\Api\BmkgFeedController::class)->whereIn('feed', ['autogempa', 'gempaterkini', 'gempadirasakan']);
+        Route::get('felt-reports', [\App\Http\Controllers\Api\FeltReportController::class, 'index']);
+        Route::post('felt-reports', [\App\Http\Controllers\Api\FeltReportController::class, 'store'])->middleware('throttle:6,10,laporanwarga');
         Route::get('disasters-export', DisasterExportController::class)->middleware('throttle:10,1,ekspor');
 
         // Cuaca dan peringatan dini: memanggil penyedia luar lewat cache, jadi diberi batas sendiri yang lebih ketat.

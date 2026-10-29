@@ -1,17 +1,15 @@
 // Klien data terbuka BMKG InaTEWS (data.bmkg.go.id). Peramban mencoba langsung (BMKG mengirim CORS "*"); bila gagal
-// (CORS, jaringan, pemblokiran) jatuh ke proksi server IGI /api/v1/bmkg/{umpan}. Hasil dinormalisasi ke satu bentuk.
+// (CORS, jaringan, pemblokiran) jatuh ke proksi server IGI /api/v1/bmkg/{umpan}. Hasil dinormalisasi ke satu bentuk. Tiap jalur dibatasi 3 detik (proksi 6 detik) agar cadangan USGS cepat dipakai.
 import { parseCoordinates } from './geo.js';
+import { BMKG_TIMEOUT_MS, fetchWithTimeout } from './ingest.js';
 import { parseDepthKm, parseMmi } from './seismic.js';
 
 export const BMKG_BASE = 'https://data.bmkg.go.id/DataMKG/TEWS';
 export const FEEDS = ['autogempa', 'gempaterkini', 'gempadirasakan'];
 
-async function getJson(url, signal) {
+function getJson(url, signal, ms) {
     // Tanpa header khusus: Accept: application/json ditolak BMKG (403) dan memicu preflight CORS.
-    const res = await fetch(url, { signal, cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    return res.json();
+    return fetchWithTimeout(url, ms, signal);
 }
 
 /**
@@ -20,10 +18,10 @@ async function getJson(url, signal) {
  */
 export async function fetchFeed(name, signal) {
     try {
-        return { data: await getJson(`${BMKG_BASE}/${name}.json`, signal), via: 'langsung', stale: false };
+        return { data: await getJson(`${BMKG_BASE}/${name}.json`, signal, BMKG_TIMEOUT_MS), via: 'langsung', stale: false };
     } catch (direct) {
         if (signal?.aborted) throw direct;
-        const body = await getJson(`/api/v1/bmkg/${name}`, signal);
+        const body = await getJson(`/api/v1/bmkg/${name}`, signal, BMKG_TIMEOUT_MS * 2);
         if (body?.status !== 'ok') throw new Error(body?.error?.message ?? 'Proksi BMKG gagal');
 
         return { data: body.data, via: 'proksi', stale: Boolean(body.is_stale) };
@@ -52,6 +50,8 @@ export function normalizeQuake(raw, jenis) {
         felt,
         mmi: parseMmi(felt),
         shakemapUrl: raw.Shakemap ? `${BMKG_BASE}/${encodeURIComponent(raw.Shakemap)}` : null,
+        source: 'bmkg',
+        validation: 'official',
     };
 }
 

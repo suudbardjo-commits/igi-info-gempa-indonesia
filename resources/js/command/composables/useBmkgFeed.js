@@ -1,11 +1,11 @@
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { fetchFeed, mergeQuakes, parseFeed } from '../lib/bmkg';
 
 /**
  * Polling umpan InaTEWS tiap `interval` ms. Gempa baru dideteksi dengan membandingkan field DateTime (+ koordinat)
- * autogempa dengan poll sebelumnya. Data terakhir yang berhasil dipertahankan bila poll gagal (status 'error', `stale`).
+ * autogempa dengan poll sebelumnya. Mode `lite` (ref, Blackout): hanya autogempa dan jeda 3 menit, untuk hemat baterai. Data terakhir yang berhasil dipertahankan bila poll gagal (status 'error', `stale`).
  */
-export function useBmkgFeed({ interval = 60_000, onNewQuake = null } = {}) {
+export function useBmkgFeed({ interval = 60_000, onNewQuake = null, lite = ref(false) } = {}) {
     const latest = shallowRef(null); // autogempa
     const recent = shallowRef([]); // gempaterkini (M 5.0+)
     const felt = shallowRef([]); // gempadirasakan
@@ -29,7 +29,8 @@ export function useBmkgFeed({ interval = 60_000, onNewQuake = null } = {}) {
         const { signal } = controller;
         lastCheckAt.value = new Date();
 
-        const [a, t, d] = await Promise.allSettled(['autogempa', 'gempaterkini', 'gempadirasakan'].map((f) => fetchFeed(f, signal)));
+        const names = lite.value ? ['autogempa'] : ['autogempa', 'gempaterkini', 'gempadirasakan'];
+        const [a, t = { status: 'fulfilled', value: null }, d = { status: 'fulfilled', value: null }] = await Promise.allSettled(names.map((f) => fetchFeed(f, signal)));
         if (signal.aborted) return;
 
         // autogempa adalah umpan utama; dua lainnya melengkapi dan boleh gagal sendiri-sendiri.
@@ -42,8 +43,8 @@ export function useBmkgFeed({ interval = 60_000, onNewQuake = null } = {}) {
         }
 
         const fresh = parseFeed(a.value.data, 'terbaru')[0] ?? null;
-        if (t.status === 'fulfilled') recent.value = parseFeed(t.value.data, 'terkini');
-        if (d.status === 'fulfilled') felt.value = parseFeed(d.value.data, 'dirasakan');
+        if (t.status === 'fulfilled' && t.value) recent.value = parseFeed(t.value.data, 'terkini');
+        if (d.status === 'fulfilled' && d.value) felt.value = parseFeed(d.value.data, 'dirasakan');
 
         if (fresh) {
             if (previousKey !== null && fresh.key !== previousKey) {
@@ -66,9 +67,15 @@ export function useBmkgFeed({ interval = 60_000, onNewQuake = null } = {}) {
         if (!document.hidden) poll();
     }
 
+    function schedule() {
+        clearInterval(timer);
+        timer = setInterval(() => { if (!document.hidden) poll(); }, lite.value ? 180_000 : interval);
+    }
+    watch(lite, () => { schedule(); poll(); });
+
     onMounted(() => {
         poll();
-        timer = setInterval(() => { if (!document.hidden) poll(); }, interval);
+        schedule();
         document.addEventListener('visibilitychange', onVisible);
     });
 

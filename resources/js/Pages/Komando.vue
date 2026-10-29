@@ -5,11 +5,16 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import BottomSheet from '../command/components/BottomSheet.vue';
 import CommandMap from '../command/components/CommandMap.vue';
 import CommandPanel from '../command/components/CommandPanel.vue';
+import ControlBar from '../command/components/ControlBar.vue';
 import TickerBar from '../command/components/TickerBar.vue';
+import { useAlertSystem } from '../command/composables/useAlertSystem';
 import { useBmkgFeed } from '../command/composables/useBmkgFeed';
+import { useFeltReports } from '../command/composables/useFeltReports';
+import { useSeismicIngest } from '../command/composables/useSeismicIngest';
 import { useUserLocation } from '../command/composables/useUserLocation';
 import { useWaveSimulation } from '../command/composables/useWaveSimulation';
 import { bearingDeg, compass8, haversineKm } from '../command/lib/geo';
+import { estimateLocalMmi } from '../command/lib/mmi';
 import { proximityBadge } from '../command/lib/seismic';
 
 /**
@@ -29,18 +34,48 @@ const sheet = ref(null);
 let mq;
 let toastTimer;
 
+const BLACKOUT_KEY = 'igi:komando:blackout';
+const blackout = ref(false);
+try { blackout.value = localStorage.getItem(BLACKOUT_KEY) === '1'; } catch { /* tanpa penyimpanan */ }
+function toggleBlackout() {
+    blackout.value = !blackout.value;
+    try { localStorage.setItem(BLACKOUT_KEY, blackout.value ? '1' : '0'); } catch { /* abaikan */ }
+}
+
+const alert = useAlertSystem();
+
+function announce(q, text) {
+    // Gempa baru otomatis dipilih dan diumumkan (role=status); pengguna bisa kembali ke pilihan sebelumnya lewat daftar.
+    selectedKey.value = q.key;
+    toast.value = { q, text };
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.value = null; }, 12_000);
+}
+
 const feed = useBmkgFeed({
+    lite: blackout,
     onNewQuake: (q) => {
-        // Gempa baru otomatis dipilih dan diumumkan (role=status); pengguna bisa kembali ke pilihan sebelumnya lewat daftar.
-        selectedKey.value = q.key;
-        toast.value = q;
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => { toast.value = null; }, 12_000);
+        announce(q, `GEMPA BARU M${q.mag.toFixed(1)}`);
+        alert.validated(q);
     },
 });
 
-const quake = computed(() => feed.quakes.value.find((q) => q.key === selectedKey.value) ?? feed.latest.value);
-const isLatest = computed(() => !quake.value || quake.value.key === feed.latest.value?.key);
+// EMSC (instan, menunggu validasi), BMKG (resmi), USGS (cadangan bila BMKG gagal).
+const ingest = useSeismicIngest(feed, {
+    onDetected: (q) => {
+        announce(q, `TERDETEKSI M${q.mag.toFixed(1)} · MENUNGGU VALIDASI BMKG`);
+        alert.detected(q);
+    },
+    onValidated: (official) => {
+        toast.value = { q: official, text: `TERVALIDASI BMKG M${official.mag.toFixed(1)}` };
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { toast.value = null; }, 12_000);
+        alert.validated(official, 'emsc');
+    },
+});
+
+const quake = computed(() => ingest.quakes.value.find((q) => q.key === selectedKey.value) ?? ingest.latest.value);
+const isLatest = computed(() => !quake.value || quake.value.key === ingest.latest.value?.key);
 
 const loc = useUserLocation();
 const telemetry = computed(() => {
@@ -51,13 +86,23 @@ const telemetry = computed(() => {
     const bearing = bearingDeg(p.lat, p.lng, q.lat, q.lng); // dari pengguna menuju episentrum
     const depth = q.depthKm ?? 10;
 
-    return { distanceKm, hypoKm: Math.sqrt(distanceKm ** 2 + depth ** 2), bearing, compass: compass8(bearing), badge: proximityBadge(distanceKm, q.mag) };
+    return {
+        distanceKm,
+        hypoKm: Math.sqrt(distanceKm ** 2 + depth ** 2),
+        bearing,
+        compass: compass8(bearing),
+        badge: proximityBadge(distanceKm, q.mag),
+        mmi: estimateLocalMmi({ magnitude: q.mag, depthKm: q.depthKm, distanceKm }),
+    };
 });
 
-const sim = useWaveSimulation(quake, computed(() => telemetry.value?.distanceKm ?? null));
+const sim = useWaveSimulation(quake, computed(() => telemetry.value?.distanceKm ?? null), computed(() => !blackout.value));
+const felt = useFeltReports({ paused: blackout });
 
 // Saat lokasi pertama kali didapat pada simulasi (bukan real-time), ulangi dari awal agar hitung mundur ETA bermakna.
-watch(loc.position, (p, prev) => { if (p && !prev && !sim.live.value) sim.restartSimulation(); });
+watch(loc.position, (p, prev) => { if (p && !prev && !sim.live.value && !blackout.value) sim.restartSimulation(); });
+
+const panelProps = computed(() => ({ sources: ingest.sources.value, blackout: blackout.value, felt, hasLocation: Boolean(loc.position.value) }));
 
 /**
  * Area peta yang tertutup UI, dipakai untuk menghitung kamera: ticker di atas; panel kiri di desktop; bottom sheet
@@ -87,14 +132,16 @@ onBeforeUnmount(() => { document.body.classList.remove('cmd-lock'); mq?.removeEv
 
 <template>
     <Head title="Pusat komando gempa" />
-    <div class="cmd">
+    <div class="cmd" :class="{ blackout }">
         <a class="skip" href="#panel-data">Lewati ke panel data</a>
-        <TickerBar :quakes="feed.quakes.value" :status="feed.status.value" :active-key="quake?.key" @select="select" />
+        <TickerBar :quakes="ingest.quakes.value" :status="feed.status.value" :active-key="quake?.key" @select="select" />
 
         <CommandMap
             ref="map"
             :quake="quake"
-            :quakes="feed.quakes.value"
+            :quakes="ingest.quakes.value"
+            :reports="felt.clusters.value"
+            :blackout="blackout"
             :user-pos="loc.position.value"
             :rp="sim.rp.value"
             :rs="sim.rs.value"
@@ -106,7 +153,7 @@ onBeforeUnmount(() => { document.body.classList.remove('cmd-lock'); mq?.removeEv
         />
 
         <div v-if="toast" class="toast" role="status">
-            <b>GEMPA BARU M{{ toast.mag.toFixed(1) }}</b> {{ toast.region }}
+            <b>{{ toast.text }}</b> {{ toast.q.region }}
             <button type="button" aria-label="Tutup pemberitahuan" @click="toast = null">×</button>
         </div>
 
@@ -116,8 +163,9 @@ onBeforeUnmount(() => { document.body.classList.remove('cmd-lock'); mq?.removeEv
                 <h1>Pusat Komando</h1>
                 <nav aria-label="Halaman lain"><Link href="/cuaca">Cuaca</Link><Link href="/berita">Berita</Link></nav>
             </header>
+            <ControlBar :sound-on="alert.enabled.value" :speaking="alert.speaking.value" :blackout="blackout" @toggle-sound="alert.toggle()" @test-sound="alert.test()" @toggle-blackout="toggleBlackout" />
             <CommandPanel
-                :quake="quake" :is-latest="isLatest" :quakes="feed.quakes.value" :feed="feed" :sim="sim"
+                :quake="quake" :is-latest="isLatest" :quakes="ingest.quakes.value" :feed="feed" v-bind="panelProps" @report="(lv) => felt.report(lv, loc.position.value, quake?.key)" :sim="sim"
                 :telemetry="telemetry" :location-status="loc.status.value" :tiles-error="tilesError" :faults-state="faultsState"
                 @select="select" @back-to-latest="selectedKey = null" @request-location="loc.request()" @clear-location="loc.clear()" @refresh="feed.refresh()"
             />
@@ -126,13 +174,16 @@ onBeforeUnmount(() => { document.body.classList.remove('cmd-lock'); mq?.removeEv
         <BottomSheet v-else ref="sheet" :enabled="mobile">
             <div id="panel-data" tabindex="-1">
                 <header class="brand mini"><Link href="/" class="back" aria-label="Kembali ke beranda IGI">← IGI</Link><h1>Pusat Komando</h1></header>
+                <ControlBar :sound-on="alert.enabled.value" :speaking="alert.speaking.value" :blackout="blackout" @toggle-sound="alert.toggle()" @test-sound="alert.test()" @toggle-blackout="toggleBlackout" />
             </div>
             <CommandPanel
-                :quake="quake" :is-latest="isLatest" :quakes="feed.quakes.value" :feed="feed" :sim="sim"
+                :quake="quake" :is-latest="isLatest" :quakes="ingest.quakes.value" :feed="feed" v-bind="panelProps" @report="(lv) => felt.report(lv, loc.position.value, quake?.key)" :sim="sim"
                 :telemetry="telemetry" :location-status="loc.status.value" :tiles-error="tilesError" :faults-state="faultsState"
                 @select="select" @back-to-latest="selectedKey = null" @request-location="loc.request()" @clear-location="loc.clear()" @refresh="feed.refresh()"
             />
         </BottomSheet>
+
+        <div v-if="blackout" class="dim" aria-hidden="true"></div>
 
         <!-- Tombol recenter. Posisinya setara bottom: calc(var(--sheet-height) + 12px), diterapkan dengan transform supaya 60 FPS tanpa reflow. -->
         <button type="button" class="fab" aria-label="Pusatkan peta ke episentrum" :disabled="!quake" @click="map?.recenter()">
@@ -167,5 +218,12 @@ body.cmd-lock { overflow: hidden; }
 .cmd .fab:disabled { opacity: .5; cursor: not-allowed; }
 .cmd .fab:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
 @media (max-width: 767px) { .cmd .fab { bottom: 12px; } }
+
+/* Mode Blackout: OLED true black #000, tanpa animasi dan transisi, antarmuka diredupkan lewat lapisan hitam. */
+.cmd.blackout, .cmd.blackout .side { background: #000; }
+.cmd.blackout .side { border-right-color: #262626; }
+.cmd.blackout :is(section, .strip, .ctl button, .fab, .toast) { background: #000 !important; border-color: #262626 !important; }
+.cmd.blackout *, .cmd.blackout *::before, .cmd.blackout *::after { animation: none !important; transition: none !important; }
+.cmd .dim { position: fixed; inset: 0; z-index: 1600; background: rgba(0, 0, 0, .4); pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .cmd .fab { will-change: auto; } }
 </style>

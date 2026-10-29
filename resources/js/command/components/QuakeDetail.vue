@@ -1,11 +1,17 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { fmtAgo, fmtCoord, fmtWib } from '../lib/format';
 import { magnitudeColor } from '../lib/seismic';
 
-const props = defineProps({ quake: { type: Object, default: null }, isLatest: { type: Boolean, default: true } });
+const props = defineProps({ quake: { type: Object, default: null }, isLatest: { type: Boolean, default: true }, blackout: { type: Boolean, default: false } });
 const emit = defineEmits(['back-to-latest']);
 
+const VAL = {
+    pending: 'PENDING BMKG VALIDATION: terdeteksi EMSC, belum dikonfirmasi BMKG',
+    fallback: 'DATA CADANGAN USGS: BMKG tidak dapat dihubungi, bukan data resmi Indonesia',
+    official: 'DATA RESMI BMKG',
+};
+const validationText = computed(() => VAL[props.quake?.validation ?? 'official']);
 const shakeFailed = ref(false);
 const shakeLoaded = ref(false);
 watch(() => props.quake?.key, () => { shakeFailed.value = false; shakeLoaded.value = false; });
@@ -19,6 +25,7 @@ watch(() => props.quake?.key, () => { shakeFailed.value = false; shakeLoaded.val
                 <h3 id="det-h">{{ isLatest ? 'Gempa terbaru' : 'Gempa terpilih' }}</h3>
                 <button v-if="!isLatest" type="button" class="link" @click="emit('back-to-latest')">← ke gempa terbaru</button>
             </header>
+            <p class="val" :class="quake.validation ?? 'official'" role="status">{{ validationText }}</p>
             <div class="top">
                 <div class="mag" :style="{ color: magnitudeColor(quake.mag), borderColor: magnitudeColor(quake.mag) }" :aria-label="`Magnitudo ${quake.mag}`">{{ quake.mag.toFixed(1) }}<small>M</small></div>
                 <div class="who">
@@ -33,14 +40,15 @@ watch(() => props.quake?.key, () => { shakeFailed.value = false; shakeLoaded.val
                 <div class="wide"><dt>Dirasakan (MMI)</dt><dd>{{ quake.felt ?? 'Belum ada laporan' }}</dd></div>
             </dl>
 
-            <figure v-if="quake.shakemapUrl && !shakeFailed" class="shake">
+            <p v-if="quake.shakemapUrl && blackout" class="note">Shakemap disembunyikan di Mode Blackout untuk menghemat data dan baterai.</p>
+            <figure v-else-if="quake.shakemapUrl && !shakeFailed" class="shake">
                 <figcaption>Shakemap BMKG</figcaption>
                 <div class="frame" :class="{ loading: !shakeLoaded }">
                     <img :src="quake.shakemapUrl" :alt="`Peta guncangan (Shakemap) BMKG untuk gempa M${quake.mag.toFixed(1)} ${quake.region}`" loading="lazy" @load="shakeLoaded = true" @error="shakeFailed = true" />
                 </div>
             </figure>
             <p v-else-if="quake.shakemapUrl" class="note">Shakemap belum dapat dimuat. <a :href="quake.shakemapUrl" target="_blank" rel="noopener noreferrer">Buka langsung</a></p>
-            <p v-else class="note">Shakemap hanya tersedia untuk gempa terbaru dari BMKG.</p>
+            <p v-else class="note">{{ quake.validation === 'pending' ? 'Rincian tsunami, MMI resmi, dan Shakemap menunggu validasi BMKG.' : 'Shakemap hanya tersedia untuk gempa terbaru dari BMKG.' }}</p>
         </template>
     </section>
 </template>
@@ -51,6 +59,10 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 h3 { margin: 0; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #9ca3af; font-weight: 600; }
 .link { background: none; border: 0; color: #38bdf8; font: inherit; font-size: 11px; text-decoration: underline; cursor: pointer; padding: 0; min-height: 28px; }
 .link:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+.val { margin: 8px 0 0; padding: 3px 8px; display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .04em; border: 1px solid; border-radius: 2px; line-height: 1.4; }
+.val.official { color: #bbf7d0; background: #052e16; border-color: #166534; }
+.val.pending { color: #fde68a; background: #422006; border-color: #f59e0b; }
+.val.fallback { color: #fed7aa; background: #431407; border-color: #f97316; }
 .top { display: flex; gap: 12px; align-items: center; margin-top: 8px; }
 .mag { flex: none; min-width: 70px; padding: 4px 8px; border: 1px solid; border-radius: 2px; font-size: 34px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; text-align: center; background: #090d16; }
 .mag small { font-size: 11px; margin-left: 2px; color: #9ca3af; font-weight: 400; }

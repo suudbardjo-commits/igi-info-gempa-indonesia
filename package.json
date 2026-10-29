@@ -6,7 +6,7 @@
         "build": "vite build",
         "dev": "vite",
         "test:sw": "node --test tests/js/sw.test.mjs",
-        "test:cmd": "node --test tests/js/command.test.mjs"
+        "test:cmd": "node --test tests/js/command.test.mjs tests/js/mitigasi.test.mjs"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

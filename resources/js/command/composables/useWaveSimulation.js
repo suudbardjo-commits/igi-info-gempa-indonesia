@@ -11,8 +11,9 @@ export const SCALES = [1, 5, 10, 30];
  *
  * @param quake  ref ke kejadian terpilih ({ time, depthKm, ... })
  * @param userDistanceKm  ref jarak episentral ke pengguna (km) atau null
+ * @param active  ref boolean; false (Mode Blackout) menghentikan seluruh requestAnimationFrame
  */
-export function useWaveSimulation(quake, userDistanceKm) {
+export function useWaveSimulation(quake, userDistanceKm, active = ref(true)) {
     const t = ref(0);
     const scale = ref(10);
     const running = ref(false);
@@ -53,6 +54,7 @@ export function useWaveSimulation(quake, userDistanceKm) {
 
     function play() {
         cancelAnimationFrame(raf);
+        if (!active.value) return;
         running.value = true;
         last = performance.now();
         raf = requestAnimationFrame(frame);
@@ -91,6 +93,8 @@ export function useWaveSimulation(quake, userDistanceKm) {
         t.value = 0;
         if (q) replay();
     }, { immediate: true });
+
+    watch(active, (on) => { if (on) replay(); else pause(); });
 
     onBeforeUnmount(pause);
 
