@@ -42,11 +42,26 @@ class AdminAreaResolver
         if (($address['country_code'] ?? 'id') !== 'id') {
             return null;
         }
-        $villages = array_values(array_unique(array_filter(array_map(fn ($k) => $this->norm($address[$k] ?? ''), ['village', 'suburb', 'neighbourhood']))));
+        $villages = [];
+        foreach (['village', 'suburb', 'neighbourhood', 'quarter', 'hamlet'] as $k) {
+            $raw = (string) ($address[$k] ?? '');
+            // OSM kadang menulis "RW 06 Kel. 19 Ilir Kec. Bukit Kecil"; ambil nama setelah "Kel."/"Desa".
+            if (preg_match('/\b(?:kel(?:urahan)?\.?|desa)\s+(.+?)(?:\s+kec(?:amatan)?\b.*)?$/iu', $raw, $m)) {
+                $villages[] = $this->norm($m[1]);
+            }
+            $villages[] = $this->norm($raw);
+        }
+        $villages = array_values(array_unique(array_filter($villages)));
         $regions = array_values(array_unique(array_filter(array_map(fn ($k) => $this->norm($address[$k] ?? ''), ['county', 'city', 'city_district', 'municipality', 'state_district']))));
         if (! $villages || ! $regions) {
             return null;
         }
+        $kec = [];
+        foreach (['city_district', 'suburb', 'neighbourhood'] as $k) {
+            $raw = (string) ($address[$k] ?? '');
+            $kec[] = $this->norm(preg_match('/\bkec(?:amatan)?\.?\s+(.+)$/iu', $raw, $m) ? $m[1] : $raw);
+        }
+        $kec = array_values(array_filter($kec));
 
         foreach ($villages as $v) {
             $rows = DB::table('admin_areas')->where('level', 4)->whereRaw("lower(regexp_replace(name, '[^a-zA-Z0-9]', '', 'g')) = ?", [$v])->get(['code']);
@@ -56,6 +71,14 @@ class AdminAreaResolver
                 if ($kab && in_array($this->norm($kab), $regions, true)) {
                     $found[] = $r->code;
                 }
+            }
+            if (count($found) > 1 && $kec) {
+                // Nama desa kembar di satu kabupaten: pilih yang kecamatannya sama dengan hasil balik-geokode.
+                $found = array_values(array_filter($found, function ($code) use ($kec) {
+                    $name = DB::table('admin_areas')->where('code', substr($code, 0, 8))->where('level', 3)->value('name');
+
+                    return $name && in_array($this->norm($name), $kec, true);
+                }));
             }
             if (count($found) === 1) {
                 return $found[0];

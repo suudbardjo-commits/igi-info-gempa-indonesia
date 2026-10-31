@@ -377,14 +377,14 @@ const compareMixed = computed(() => new Set(compareData.value.map((c) => c.state
                             <section class="summary" aria-label="Ringkasan cuaca">
                                 <div class="now"><span class="temp">{{ num(data.current.temperature, '', 1) }}<small>°C</small></span><span class="cond">{{ data.current.condition ?? dash }}</span><small>{{ data.provider === 'bmkg' ? 'Slot prakiraan 3 jam' : 'Perkiraan model' }} · {{ clock24(data.current.time) }}</small></div>
                                 <dl>
-                                    <div><dt>Terasa seperti</dt><dd>{{ num(data.current.feels_like, '°C', 1) }}</dd></div>
-                                    <div><dt>Kelembapan</dt><dd>{{ num(data.current.humidity, '%') }}</dd></div>
-                                    <div><dt>Angin</dt><dd>{{ num(data.current.wind_speed, 'km/jam', 1) }}</dd></div>
-                                    <div><dt>Peluang hujan</dt><dd>{{ num(data.current.rain_probability, '%') }}</dd></div>
-                                    <div><dt>Curah hujan</dt><dd>{{ num(data.current.precipitation, 'mm', 1) }}</dd></div>
-                                    <div><dt>Indeks UV</dt><dd>{{ num(data.current.uv, '', 1) }}</dd></div>
-                                    <div><dt>Matahari terbit</dt><dd>{{ clock24(data.daily[0]?.sunrise) }}</dd></div>
-                                    <div><dt>Matahari terbenam</dt><dd>{{ clock24(data.daily[0]?.sunset) }}</dd></div>
+                                    <div v-if="data.current.feels_like != null"><dt>Terasa seperti</dt><dd>{{ num(data.current.feels_like, '°C', 1) }}</dd></div>
+                                    <div v-if="data.current.humidity != null"><dt>Kelembapan</dt><dd>{{ num(data.current.humidity, '%') }}</dd></div>
+                                    <div v-if="data.current.wind_speed != null"><dt>Angin</dt><dd>{{ num(data.current.wind_speed, 'km/jam', 1) }}</dd></div>
+                                    <div v-if="data.current.rain_probability != null"><dt>Peluang hujan</dt><dd>{{ num(data.current.rain_probability, '%') }}</dd></div>
+                                    <div v-if="data.current.precipitation != null"><dt>Curah hujan</dt><dd>{{ num(data.current.precipitation, 'mm', 1) }}</dd></div>
+                                    <div v-if="data.current.uv != null"><dt>Indeks UV</dt><dd>{{ num(data.current.uv, '', 1) }}</dd></div>
+                                    <div v-if="data.daily[0]?.sunrise"><dt>Matahari terbit</dt><dd>{{ clock24(data.daily[0]?.sunrise) }}</dd></div>
+                                    <div v-if="data.daily[0]?.sunset"><dt>Matahari terbenam</dt><dd>{{ clock24(data.daily[0]?.sunset) }}</dd></div>
                                 </dl>
                             </section>
 

@@ -214,7 +214,7 @@ export default function CuacaScreen() {
                         {alerts?.ok && alerts.items.length === 0 && <Text style={st.quiet}>Tidak ada peringatan dini BMKG aktif untuk lokasi ini · diperiksa {lalu(alerts.checked)}. Tidak adanya peringatan bukan jaminan kondisi aman.</Text>}
 
                         <View style={st.grid}>
-                            {([['', 'Terasa seperti', angka(c.feels_like, '°C', 0)], ['', 'Kelembapan', angka(c.humidity, '%')], ['', 'Angin', angka(c.wind_speed, 'km/jam', 0)], ['', 'Peluang hujan', angka(c.rain_probability, '%')], ['', 'Curah hujan', angka(c.precipitation, 'mm', 1)], ['', 'Indeks UV', angka(c.uv, '', 1)], ['', 'Terbit', waktuLokal(data.daily?.[0]?.sunrise, tz, tzl)], ['', 'Terbenam', waktuLokal(data.daily?.[0]?.sunset, tz, tzl)]] as const).map(([ic, k, v]) => (
+                            {([['', 'Terasa seperti', angka(c.feels_like, '°C', 0)], ['', 'Kelembapan', angka(c.humidity, '%')], ['', 'Angin', angka(c.wind_speed, 'km/jam', 0)], ['', 'Peluang hujan', angka(c.rain_probability, '%')], ['', 'Curah hujan', angka(c.precipitation, 'mm', 1)], ['', 'Indeks UV', angka(c.uv, '', 1)], ['', 'Terbit', waktuLokal(data.daily?.[0]?.sunrise, tz, tzl)], ['', 'Terbenam', waktuLokal(data.daily?.[0]?.sunset, tz, tzl)]] as const).filter(([, , v]) => v !== '-').map(([ic, k, v]) => (
                                 <View key={k} style={st.cell}><Text style={s.muted}>{k}</Text><Text style={st.val}>{v}</Text></View>
                             ))}
                         </View>
