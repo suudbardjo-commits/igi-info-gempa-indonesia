@@ -10,11 +10,22 @@ use Illuminate\Support\Facades\Cache;
  */
 class WeatherService
 {
-    public function __construct(private OpenMeteoClient $openMeteo, private BmkgForecastClient $bmkg) {}
+    public function __construct(private OpenMeteoClient $openMeteo, private BmkgForecastClient $bmkg, private AdminAreaResolver $areas) {}
 
     /** @return array<string, mixed> */
-    public function byCoordinates(float $lat, float $lon, ?string $name = null): array
+    public function byCoordinates(float $lat, float $lon, ?string $name = null, bool $preferBmkg = false): array
     {
+        if ($preferBmkg && ($adm4 = $this->areas->resolve($lat, $lon))) {
+            try {
+                $data = $this->byAdm4($adm4);
+                $data['location']['name'] = $name ?: ($data['location']['name'] ?? null);
+
+                return $data;
+            } catch (UpstreamException) {
+                // BMKG gagal untuk titik ini: lanjut ke estimasi model di bawah (berlabel provider open-meteo).
+            }
+        }
+
         $lat = round($lat, 2);
         $lon = round($lon, 2);
         $data = $this->cached("weather:om:{$lat}:{$lon}", fn () => $this->openMeteo->forecast($lat, $lon));

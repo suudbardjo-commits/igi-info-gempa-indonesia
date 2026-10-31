@@ -5,6 +5,7 @@ use App\Services\Weather\AlertMatcher;
 use App\Services\Weather\CapParser;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 
@@ -56,7 +57,7 @@ describe('GET /api/v1/weather', function () {
     it('Open-Meteo: bentuk seragam, satuan eksplisit, label estimasi, dan waktu WIB dengan offset', function () {
         Http::fake(['api.open-meteo.com/*' => Http::response(wxOpenMeteo())]);
 
-        $r = $this->getJson('/api/v1/weather?lat=-6.2&lon=106.8&name=Jakarta')->assertOk();
+        $r = $this->getJson('/api/v1/weather?lat=-6.2&lon=106.8&name=Jakarta&provider=open-meteo')->assertOk();
 
         $r->assertJsonPath('provider', 'open-meteo')->assertJsonPath('label', 'Estimasi cuaca saat ini')
             ->assertJsonPath('tz_label', 'WIB')->assertJsonPath('current.time', '2026-10-25T11:00:00+07:00')
@@ -72,21 +73,21 @@ describe('GET /api/v1/weather', function () {
             ->push(wxOpenMeteo('Asia/Makassar', '2026-10-25T23:00'))
             ->push(wxOpenMeteo('Asia/Jayapura', '2026-10-26T00:00'))]);
 
-        $this->getJson('/api/v1/weather?lat=-5.15&lon=119.43')->assertJsonPath('tz_label', 'WITA')->assertJsonPath('current.time', '2026-10-25T23:00:00+08:00');
-        $this->getJson('/api/v1/weather?lat=-2.53&lon=140.7')->assertJsonPath('tz_label', 'WIT')->assertJsonPath('current.time', '2026-10-26T00:00:00+09:00');
+        $this->getJson('/api/v1/weather?lat=-5.15&lon=119.43&provider=open-meteo')->assertJsonPath('tz_label', 'WITA')->assertJsonPath('current.time', '2026-10-25T23:00:00+08:00');
+        $this->getJson('/api/v1/weather?lat=-2.53&lon=140.7&provider=open-meteo')->assertJsonPath('tz_label', 'WIT')->assertJsonPath('current.time', '2026-10-26T00:00:00+09:00');
     });
 
     it('nilai kosong dari penyedia tetap null, bukan 0', function () {
         Http::fake(['api.open-meteo.com/*' => Http::response(wxOpenMeteo(over: ['current' => ['apparent_temperature' => null, 'relative_humidity_2m' => null]]))]);
 
-        $this->getJson('/api/v1/weather?lat=-6.2&lon=106.8')->assertJsonPath('current.feels_like', null)->assertJsonPath('current.humidity', null);
+        $this->getJson('/api/v1/weather?lat=-6.2&lon=106.8&provider=open-meteo')->assertJsonPath('current.feels_like', null)->assertJsonPath('current.humidity', null);
     });
 
     it('menolak koordinat tidak sah atau di luar Indonesia tanpa memanggil penyedia', function () {
         Http::fake();
 
         $this->getJson('/api/v1/weather?lat=abc&lon=1')->assertStatus(422)->assertJsonPath('status', 'error');
-        $this->getJson('/api/v1/weather?lat=48.8&lon=2.3')->assertStatus(422)->assertJsonPath('error.code', 'invalid_request');
+        $this->getJson('/api/v1/weather?lat=48.8&lon=2.3&provider=open-meteo')->assertStatus(422)->assertJsonPath('error.code', 'invalid_request');
         $this->getJson('/api/v1/weather')->assertStatus(422);
         $this->getJson('/api/v1/weather?adm4=31.71')->assertStatus(422);
         $this->getJson('/api/v1/weather?adm4=1;DROP')->assertStatus(422);
@@ -96,33 +97,33 @@ describe('GET /api/v1/weather', function () {
     it('galat HTTP, JSON rusak, dan batas waktu menjadi galat terkendali (bukan 500)', function () {
         Http::fake(['api.open-meteo.com/*' => Http::sequence()->push('bukan json', 200)->push(['x' => 1], 500)->pushFailedConnection()]);
 
-        $this->getJson('/api/v1/weather?lat=-6.2&lon=106.8')->assertStatus(502)->assertJsonPath('error.code', 'malformed');
-        $this->getJson('/api/v1/weather?lat=-6.3&lon=106.8')->assertStatus(502)->assertJsonPath('error.code', 'upstream_error');
-        $this->getJson('/api/v1/weather?lat=-6.4&lon=106.8')->assertStatus(502)->assertJsonPath('error.code', 'unreachable');
+        $this->getJson('/api/v1/weather?lat=-6.2&lon=106.8&provider=open-meteo')->assertStatus(502)->assertJsonPath('error.code', 'malformed');
+        $this->getJson('/api/v1/weather?lat=-6.3&lon=106.8&provider=open-meteo')->assertStatus(502)->assertJsonPath('error.code', 'upstream_error');
+        $this->getJson('/api/v1/weather?lat=-6.4&lon=106.8&provider=open-meteo')->assertStatus(502)->assertJsonPath('error.code', 'unreachable');
     });
 
     it('429 dari penyedia menahan panggilan berikutnya sampai Retry-After', function () {
         Http::fake(['api.open-meteo.com/*' => Http::response('', 429, ['Retry-After' => '120'])]);
 
-        $this->getJson('/api/v1/weather?lat=-6.2&lon=106.8')->assertStatus(503)->assertJsonPath('error.code', 'rate_limited');
-        $this->getJson('/api/v1/weather?lat=-6.5&lon=106.8')->assertStatus(503);
+        $this->getJson('/api/v1/weather?lat=-6.2&lon=106.8&provider=open-meteo')->assertStatus(503)->assertJsonPath('error.code', 'rate_limited');
+        $this->getJson('/api/v1/weather?lat=-6.5&lon=106.8&provider=open-meteo')->assertStatus(503);
         Http::assertSentCount(1);
     });
 
     it('cache segar melayani permintaan kembar dengan satu panggilan penyedia', function () {
         Http::fake(['api.open-meteo.com/*' => Http::response(wxOpenMeteo())]);
 
-        $this->getJson('/api/v1/weather?lat=-6.2&lon=106.8')->assertOk();
-        $this->getJson('/api/v1/weather?lat=-6.204&lon=106.799')->assertOk()->assertJsonPath('cache_age_seconds', 0);
+        $this->getJson('/api/v1/weather?lat=-6.2&lon=106.8&provider=open-meteo')->assertOk();
+        $this->getJson('/api/v1/weather?lat=-6.204&lon=106.799&provider=open-meteo')->assertOk()->assertJsonPath('cache_age_seconds', 0);
         Http::assertSentCount(1);
     });
 
     it('penyedia gagal setelah cache kedaluwarsa: data lama disajikan dan ditandai basi dengan umurnya', function () {
         Http::fake(['api.open-meteo.com/*' => Http::sequence()->push(wxOpenMeteo())->push('', 500)]);
 
-        $this->getJson('/api/v1/weather?lat=-6.2&lon=106.8')->assertOk();
+        $this->getJson('/api/v1/weather?lat=-6.2&lon=106.8&provider=open-meteo')->assertOk();
         $this->travel(40)->minutes();
-        $this->getJson('/api/v1/weather?lat=-6.2&lon=106.8')->assertOk()
+        $this->getJson('/api/v1/weather?lat=-6.2&lon=106.8&provider=open-meteo')->assertOk()
             ->assertJsonPath('is_stale', true)->assertJsonPath('refresh_failed', 'upstream_error')
             ->assertJsonPath('cache_age_seconds', 2400);
     });
@@ -445,5 +446,22 @@ describe('pusat komando', function () {
             [$lng, $lat] = $f['geometry']['coordinates'][0][0];
             expect($lng)->toBeFloat()->and($lat)->toBeFloat(); // urutan GeoJSON [bujur, lintang]
         }
+    });
+});
+
+describe('titik GPS memakai BMKG bila desa dikenali', function () {
+    it('mencocokkan nama desa dan kabupaten/kota dari balik-geokode ke katalog adm4, hanya bila tepat satu', function () {
+        DB::table('admin_areas')->insert([
+            ['code' => '99.01', 'name' => 'KOTA CONTOH', 'level' => 2, 'parent_code' => '99'],
+            ['code' => '99.02', 'name' => 'KABUPATEN LAIN', 'level' => 2, 'parent_code' => '99'],
+            ['code' => '99.01.01.1001', 'name' => 'Sukamaju', 'level' => 4, 'parent_code' => '99.01.01'],
+            ['code' => '99.02.01.1001', 'name' => 'Sukamaju', 'level' => 4, 'parent_code' => '99.02.01'],
+        ]);
+        $r = app(\App\Services\Weather\AdminAreaResolver::class);
+
+        expect($r->match(['village' => 'Sukamaju', 'city' => 'Kota Contoh', 'country_code' => 'id']))->toBe('99.01.01.1001');
+        expect($r->match(['village' => 'Sukamaju', 'county' => 'Kabupaten Lain', 'country_code' => 'id']))->toBe('99.02.01.1001');
+        expect($r->match(['village' => 'Sukamaju', 'city' => 'Kota Tak Ada', 'country_code' => 'id']))->toBeNull();
+        expect($r->match(['village' => 'Sukamaju', 'city' => 'Kota Contoh', 'country_code' => 'my']))->toBeNull();
     });
 });

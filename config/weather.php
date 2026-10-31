@@ -20,7 +20,7 @@ return [
     'stale_for' => 21600,
 
     // Pembatas internal ke penyedia (permintaan per menit), di luar batas per-IP pengguna kita.
-    'upstream_per_minute' => ['open-meteo' => 240, 'bmkg' => 50, 'geocoder' => 120],
+    'upstream_per_minute' => ['open-meteo' => 240, 'bmkg' => 50, 'geocoder' => 120, 'nominatim' => 40],
 
     // Wilayah yang dilayani: Indonesia dengan sedikit margin. Mencegah endpoint dipakai sebagai proksi cuaca dunia.
     'bounds' => ['south' => -12.5, 'north' => 7.5, 'west' => 94.0, 'east' => 142.0],
@@ -30,6 +30,9 @@ return [
         'geocode_url' => 'https://geocoding-api.open-meteo.com/v1/search',
         'attribution' => 'Data cuaca oleh Open-Meteo.com (CC BY 4.0; tingkat gratis untuk penggunaan non-komersial). Geokode: GeoNames.',
     ],
+
+    // Balik-geokode koordinat ke nama desa/kabupaten agar prakiraan BMKG (per desa) bisa dipakai untuk titik GPS.
+    'nominatim' => ['url' => 'https://nominatim.openstreetmap.org/reverse'],
 
     'bmkg' => [
         'forecast_url' => 'https://api.bmkg.go.id/publik/prakiraan-cuaca',

@@ -7,8 +7,10 @@ import { formatAgo, formatWib } from '../lib/quake';
 defineProps({ sources: { type: Array, required: true } });
 
 const CREDITS = [
-    { name: 'Gempa', text: 'BMKG (data.bmkg.go.id) sebagai sumber utama, USGS sebagai pembanding. Bila dua sumber melaporkan gempa yang sama, yang BMKG yang ditampilkan.' },
+    { name: 'Gempa resmi', text: 'BMKG (data.bmkg.go.id) adalah sumber utama dan diteruskan apa adanya. USGS melengkapi gempa M 4+ yang belum ada di BMKG dan selalu ditandai sumbernya; bila kejadiannya sama, yang BMKG yang ditampilkan. Di Pusat Komando, gempa dari EMSC ditandai "menunggu validasi BMKG" sampai ada pasangan resmi.' },
+    { name: 'Prakiraan cuaca', text: 'Titik yang dikenali sebagai desa atau kelurahan memakai prakiraan resmi BMKG. Bila tidak dikenali atau BMKG gagal, dipakai estimasi model Open-Meteo dan diberi label sendiri.' },
     { name: 'Peringatan cuaca dan berita', text: 'BMKG dan BNPB. Hanya judul, kutipan satu kalimat, dan tautan yang disimpan; hak cipta ada pada penerbitnya.' },
+    { name: 'Perkiraan dan laporan warga', text: 'Estimasi guncangan (MMI) dihitung dengan rumus kasar, bukan hasil pengukuran. Laporan "dirasakan" dari warga tidak diverifikasi.' },
     { name: 'Video', text: 'Kanal YouTube Info BMKG. Video baru dimuat dari YouTube setelah Anda menekan tombol putar.' },
     { name: 'Garis pantai', text: 'Natural Earth (domain publik).' },
 ];

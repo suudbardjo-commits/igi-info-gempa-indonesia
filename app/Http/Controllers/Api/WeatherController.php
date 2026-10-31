@@ -73,7 +73,7 @@ class WeatherController extends Controller
                 if (! Bounds::contains($lat, $lon)) {
                     return $this->invalid('Koordinat di luar wilayah Indonesia yang dilayani.');
                 }
-                $data = $weather->byCoordinates($lat, $lon, $request->query('name'));
+                $data = $weather->byCoordinates($lat, $lon, $request->query('name'), $provider !== 'open-meteo');
             }
         } catch (UpstreamException $e) {
             return $this->failure($e);

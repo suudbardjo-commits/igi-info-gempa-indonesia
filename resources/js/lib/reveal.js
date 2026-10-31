@@ -10,12 +10,13 @@ function getObserver() {
     observer ??= new IntersectionObserver(
         (entries) => {
             for (const entry of entries) {
-                if (!entry.isIntersecting) continue;
+                // Elemen setinggi layar cukup terlihat 120 px; rasio 12% saja tidak pernah tercapai oleh elemen yang sangat tinggi.
+                if (!entry.isIntersecting || (entry.intersectionRatio < 0.12 && entry.intersectionRect.height < 120)) continue;
                 entry.target.classList.add('in');
                 observer.unobserve(entry.target);
             }
         },
-        { threshold: 0.12, rootMargin: '0px 0px -6% 0px' },
+        { threshold: Array.from({ length: 51 }, (_, i) => i / 50), rootMargin: '0px 0px -6% 0px' },
     );
 
     return observer;

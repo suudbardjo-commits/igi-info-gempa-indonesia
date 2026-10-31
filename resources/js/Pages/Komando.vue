@@ -206,7 +206,7 @@ body.cmd-lock { overflow: hidden; }
 .cmd .side:focus { outline: none; }
 .cmd .brand { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .cmd .brand h1 { margin: 0; flex: 1; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: #f9fafb; }
-.cmd .brand .back, .cmd .brand nav a { color: #38bdf8; text-decoration: none; font-size: 12px; min-height: 28px; display: inline-flex; align-items: center; }
+.cmd .brand .back, .cmd .brand nav a { color: #38bdf8; text-decoration: none; font-size: 12px; min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; }
 .cmd .brand nav { display: flex; gap: 12px; }
 .cmd .brand a:hover { text-decoration: underline; }
 .cmd .brand a:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }

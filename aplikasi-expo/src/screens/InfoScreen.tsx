@@ -5,14 +5,16 @@ import { Chip } from '../ui';
 import BeritaScreen from './BeritaScreen';
 import PeringatanScreen from './PeringatanScreen';
 import SiagaScreen from './SiagaScreen';
+import SumberScreen from './SumberScreen';
 import TerdekatScreen from './TerdekatScreen';
 
-type Part = 'peringatan' | 'berita' | 'terdekat' | 'siaga';
+type Part = 'peringatan' | 'berita' | 'terdekat' | 'siaga' | 'sumber';
 const PARTS: { key: Part; label: string }[] = [
     { key: 'peringatan', label: 'Peringatan dini' },
     { key: 'terdekat', label: 'Gempa terdekat' },
     { key: 'siaga', label: 'Siaga' },
     { key: 'berita', label: 'Berita' },
+    { key: 'sumber', label: 'Sumber data' },
 ];
 
 /** Peringatan dini, gempa terdekat, panduan siaga, dan berita dalam satu tab dengan pengalih. */
@@ -31,6 +33,7 @@ export default function InfoScreen({ initial }: { initial?: string }) {
                 {part === 'terdekat' && <TerdekatScreen />}
                 {part === 'siaga' && <SiagaScreen />}
                 {part === 'berita' && <BeritaScreen />}
+                {part === 'sumber' && <SumberScreen />}
             </View>
         </View>
     );
